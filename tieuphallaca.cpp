@@ -60,4 +60,6 @@ int main(int argc, char *argv[])
     carlos.run();
     std::cout << "Finished Hallacas: "<< carlos.get_finished_hallacas() << std::endl;
     std::cout << "For tie up: "<< carlos.get_for_tie_up() << std::endl;
+    
+    return EXIT_SUCCESS;
 }

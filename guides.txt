@@ -1,0 +1,22 @@
+1) Preparación de las hojas de cambur:
+
+    El encargado de preparar las hojas de cambur, debe lavar, asar y cortar las hojas. El tiempo para hacer esta tarea se modela  por medio de una distribución normal con media M1 y desviación estándar D1. El proceso se detiene cuando al encargado de poner el guiso dá la orden de detener el proceso. Cada hoja lista se colocará en la pila de hojas.
+
+2) Colocación de la masa en la hoja:
+    
+    Si hay hojas disponibles, el encargado de poner la masa en la hoja procede a engrasar la hoja y colocar la masa. El tiempo requerido para ponerla masa en la hoja se puede modelar por medio de una distribución Normal con media M2 y desviación estándar D2. Una vez colocada la masa en la hoja se
+coloca en la pila de hojas con masa.
+
+3) Colocar el guiso :
+    El encargado de colocar el guiso recibe  X Kg de guiso para hayacas, y debe estar pendiente que cuando queden Y grs o menos ordenar al encargado de preparar las hojas que se detenga. A
+cada hayaca se le colocaran al menos 80 grs de guiso. El tiempo requerido para colocar el guiso se puede modelar por medio de una distribución Normal con media M3 y desviación estándar D3. Una vez colocado el guiso y cerrada la hoja de la hayaca se coloca en la pila de hayacas por amarrar.
+
+4) Amarre de hayacas:
+    El encargado de amarrar las hayacas debe contabilizar las hayacas amarradas y ser capaz de responder consultas sobre hayacas amarradas y hayacas listas por amarrar, así como sacar las
+estadísticas de cuanto fue el tiempo para hacer las hayacas El tiempo requerido para amarrar cada hayaca  se puede modelar por medio de una distribución Normal con media M4 y desviación estándar D4.
+
+Se pide:
+
+    - Modelar cada una de las 4 tareas  como un procesos independientes.
+    - Cada proceso debe escribir por consola lo que está haciendo.
+    - Además de los 4 procesos debe existir un proceso que obtenga y muestre los estados (libre/ocupado) de cada una de las personas.

@@ -32,6 +32,14 @@ class PutDough
         {
             return this->activity;
         }
+
+        std::string get_status(void)
+        {
+            if(this->status)
+                return "Busy: "+this->get_activity();
+            else
+                return "Not Busy";
+        }
         
         std::chrono::seconds get_busy_time(void)
         {
@@ -54,22 +62,22 @@ class PutDough
                 this->leaves--;
                 
                 this->activity = "greasing";
-                std::cout << (this->status ? "Busy: " : "Not busy.")
-                                << "I am " << this->activity << " leaves!"<< std::endl;
+                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 
                 this->activity = "putting up dough";
-                std::cout << (this->status ? "Busy: " : "Not busy.")
-                                << "I am " << this->activity << " to leaves!"<< std::endl;
+                std::cout << "I am " << this->activity << " to leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(4));
+
                 this->leaves_with_dough++;
-            }      
-    } 
+            }
+            this->status = false;
+        } 
 };
 
 int main(int argc, char *argv[])
 {   
-     PutDough carly = PutDough(15, 0);
+     PutDough carly = PutDough(3, 0);
      std::cout << "Leaves with dough: " << carly.get_leaves_with_dough() << std::endl;
      carly.run();
      std::cout << "Leaves with dough: " << carly.get_leaves_with_dough() << std::endl;

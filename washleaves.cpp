@@ -30,6 +30,14 @@ class WashLeaves
         {
             return this->activity;
         }
+
+        std::string get_status(void)
+        {
+            if(this->status)
+                return "Busy: "+this->get_activity();
+            else
+                return "Not Busy";
+        }
         
         std::chrono::seconds get_busy_time(void)
         {
@@ -66,6 +74,7 @@ class WashLeaves
                 leaves++;
                 std::cin >> this->stop; 
             } 
+            this->status = false;
         }
 };
 

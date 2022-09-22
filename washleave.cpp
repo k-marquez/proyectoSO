@@ -2,40 +2,43 @@
 #include <chrono>
 #include <thread>
 
-class WashLeave
+class WashLeaves
 {
     private:
         unsigned int leaves;
-        std::string activitie;
+        std::string activity;
         bool status, stop;
     public:
-        WashLeave()
+        WashLeaves()
         {
             this->leaves = 0;
-            this->activitie = "";
+            this->activity = "";
             this->status = this->stop = false;
         }
         
-        WashLeave(const unsigned int l) :
+        WashLeaves(const unsigned int l) :
                                     leaves(l),
-                                    activitie(""),
+                                    activity(""),
                                     status(false),
-                                    stop(false){}
-                                    
+                                    stop(false){}                             
         unsigned int get_finished_leaves(void)
         {
             return this->leaves;
         }
         
-        std::string get_activitie(void)
+        std::string get_activity(void)
         {
-            return this->activitie;
+            return this->activity;
         }
         
-        std::chrono::minutes get_busy_time(void)
+        std::chrono::seconds get_busy_time(void)
         {
-            //Se debe recalcular
-            return std::chrono::minutes(8 * this->leaves);
+            if(this->get_activity() == "washing")
+                return std::chrono::seconds(8);
+            else if(this->get_activity() == "roasting")
+                return std::chrono::seconds(4);
+            else
+                return std::chrono::seconds(2);
         }
         
         void run()
@@ -43,28 +46,27 @@ class WashLeave
             this->status = true;
             while(!this->stop)
             {
-                this->activitie = "washing";
-                std::cout << "I am " << this->activitie << " leaves!"<< std::endl;
+                this->activity = "washing";
+                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 
-                this->activitie = "roast";
-                std::cout << "I am " << this->activitie << " leaves!"<< std::endl;
+                this->activity = "roasting";
+                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(4));
                 
-                
-                this->activitie = "cutting";
-                std::cout << "I am " << this->activitie << " leaves!"<< std::endl;
+                this->activity = "cutting up";
+                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 
                 leaves++;
-                std::cin >> this->stop;
+                std::cin >> this->stop; 
             } 
         }
 };
 
 int main(int argc, char *argv[])
 {    
-     WashLeave lewis = WashLeave();
+     WashLeaves lewis = WashLeaves();
      std::cout << "Finished leaves: " << lewis.get_finished_leaves() << std::endl;
      lewis.run();
      std::cout << "Finished leaves: " << lewis.get_finished_leaves() << std::endl;

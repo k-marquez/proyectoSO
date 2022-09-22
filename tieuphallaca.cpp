@@ -7,20 +7,20 @@ class TieUpHallaca
     private:
         unsigned int finished_hallacas,
                               for_tie_up;
-        std::string activitie;
+        std::string activity;
         bool status;
     public:
         TieUpHallaca()
         {
             this->finished_hallacas = this->for_tie_up = 0;
-            this->activitie = "tie up";
+            this->activity = "tie up";
             this->status = false;
         }
         
         TieUpHallaca(const unsigned int fh, const unsigned int ftu) :
                                     finished_hallacas(fh),
                                     for_tie_up(ftu),
-                                    activitie("tie up"),
+                                    activity("tie up"),
                                     status(false) {}
                                     
         unsigned int get_finished_hallacas(void)
@@ -33,10 +33,10 @@ class TieUpHallaca
             return this->for_tie_up;
         }
         
-        std::chrono::minutes get_time(void)
+        std::chrono::seconds get_time(void)
         {
             //Se debe recalcular
-            return std::chrono::minutes(15);
+            return std::chrono::seconds(15);
         }
         
         void run()
@@ -44,7 +44,7 @@ class TieUpHallaca
             this->status = true;
             while(for_tie_up > 0)
             {
-                std::cout << "I am "<< this->activitie << " Hallacas!"<< std::endl;
+                std::cout << "I am "<< this->activity << " Hallacas!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(5));
                 this->finished_hallacas++;
                 this->for_tie_up--;

@@ -22,7 +22,7 @@ class PutStew
                               increment_of_stew,
                               min_limit_stew_gr;
         float available_stew;
-        std::string activitie;
+        std::string activity;
         bool status, notified;
         
         // Generates a random amount of grs to put in dough
@@ -47,7 +47,7 @@ class PutStew
             this->leaves_with_dough = this->for_tie_up = 0;
             this->available_stew = this->min_limit_stew_gr = 0.;
             this->min_stew_gr = this->increment_of_stew = 0.;
-            this->activitie = "";
+            this->activity = "";
             this->status =  this->notified = false;
         }
         
@@ -60,7 +60,7 @@ class PutStew
                                     min_limit_stew_gr(mlsg),
                                     min_stew_gr(msg),
                                     increment_of_stew(ios),
-                                    activitie(""),
+                                    activity(""),
                                     status(false),
                                     notified(false){}
                                     
@@ -69,9 +69,9 @@ class PutStew
             return this->for_tie_up;
         }
         
-        std::string get_activitie(void)
+        std::string get_activity(void)
         {
-            return this->activitie;
+            return this->activity;
         }
         
         float get_available_stew(void)
@@ -79,10 +79,10 @@ class PutStew
             return this->available_stew;
         }
         
-        std::chrono::minutes get_busy_time(void)
+        std::chrono::seconds get_busy_time(void)
         {
             //Se debe recalcular
-            return std::chrono::minutes(4 * this->for_tie_up);
+            return std::chrono::seconds(4 * this->for_tie_up);
         }
         
         void run()
@@ -98,15 +98,15 @@ class PutStew
                     grs_stew = to_gr(this->available_stew);
                     
                 this->available_stew -= to_kg(grs_stew);
-                this->activitie = "putting up";
+                this->activity = "putting up";
                 std::cout << (status ? "Busy: " : "Not busy.")
-                                << "I am  "<< this->activitie << " " << grs_stew
+                                << "I am  "<< this->activity << " " << grs_stew
                                 << " grs of stew!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 
-                this->activitie = "closing";
+                this->activity = "closing";
                 std::cout << (status ? "Busy: " : "Not busy.") << "I am "
-                                << this->activitie << " the hallaca!" << std::endl;
+                                << this->activity << " the hallaca!" << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 
                 if (this->available_stew <= to_kg(this->min_limit_stew_gr) and not notified)

@@ -7,13 +7,14 @@ const float MIN_STEW_GR = 80.0;
 // Amount of grams to put in the extra dough
 const unsigned int INCREMENT_OF_STEW = 15;
 
-//Temporary stack of leaves with dough
-unsigned int Leaves_With_Dough = 10;
+//Temporary stacks of leaves with dough and hallacas pending for tie up
+unsigned int Leaves_With_Dough = 10, For_Tie_Up = 0;
 
 class PutStew
 {
     private:
         float available_stew, min_limit_stew_gr;
+        unsigned int count_for_tie_up;
         std::string activity;
         bool status, notified;
         
@@ -39,6 +40,7 @@ class PutStew
         PutStew()
         {
             this->available_stew = this->min_limit_stew_gr = 0.;
+            this->count_for_tie_up = 0;
             this->activity = "";
             this->status =  this->notified = false;
         }
@@ -46,6 +48,7 @@ class PutStew
         PutStew(const float as, const unsigned int mlsg) :
                                     available_stew(as * 1000),
                                     min_limit_stew_gr(mlsg),
+                                    count_for_tie_up(0),
                                     activity(""),
                                     status(false),
                                     notified(false){}
@@ -58,6 +61,11 @@ class PutStew
         float get_min_limit_stew_gr(void)
         {
             return this->min_limit_stew_gr;
+        }
+
+        unsigned int get_count_for_tie_up(void)
+        {
+            return this->count_for_tie_up;
         }
 
         std::string get_activity(void)
@@ -86,14 +94,19 @@ class PutStew
             return std::chrono::seconds(2);
         }
 
-        std::chrono::seconds get_time_worked(unsigned int leaves_with_dough)
+        std::chrono::seconds get_time_worked(void)
         {
-            return std::chrono::seconds(4 * leaves_with_dough);
+            return std::chrono::seconds(4 * this->get_count_for_tie_up());
         }
 
         void set_available_stew(float grs_stew)
         {
             this->available_stew -= grs_stew;
+        }
+        
+        void increment_count_for_tie_up(void)
+        {
+            this->count_for_tie_up++;
         }
 
         void set_activity(std::string activity)
@@ -121,6 +134,8 @@ class PutStew
                 this->set_status(true);
                 while(Leaves_With_Dough > 0 and this->get_available_stew() > 0.)
                 {
+                    Leaves_With_Dough--;
+                    
                     grs_stew = this->amount_stew_to_putting();
                     //Placing the rest of stew
                     if(this->get_available_stew() < MIN_STEW_GR)
@@ -136,7 +151,8 @@ class PutStew
                     std::cout << "I am " << this->get_activity() << " the hallaca!"<< std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(2));
                     
-                    Leaves_With_Dough--;
+                    For_Tie_Up++;
+                    this->increment_count_for_tie_up();
                     
                     if(!this->get_notified())
                         this->set_notified(this->stop_washing_leaves());

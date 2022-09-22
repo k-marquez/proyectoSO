@@ -5,61 +5,53 @@
 class TieUpHallaca
 {
     private:
-        unsigned int finished_hallacas,
-                              for_tie_up;
         std::string activity;
         bool status;
     public:
         TieUpHallaca()
         {
-            this->finished_hallacas = this->for_tie_up = 0;
             this->activity = "tie up";
             this->status = false;
         }
         
-        TieUpHallaca(const unsigned int fh, const unsigned int ftu) :
-                                    finished_hallacas(fh),
-                                    for_tie_up(ftu),
-                                    activity("tie up"),
-                                    status(false) {}
-                                    
-        unsigned int get_finished_hallacas(void)
+        std::string get_activity(void)
         {
-            return this->finished_hallacas;
+            return this->activity;
         }
-        
-        unsigned int get_for_tie_up(void)
+
+        std::string get_status(void)
         {
-            return this->for_tie_up;
+            if(this->status)
+                return "Busy: "+this->get_activity();
+            else
+                return "Not Busy";
         }
-        
-        std::chrono::seconds get_time(void)
+
+        std::chrono::seconds get_busy_time(void)
         {
-            //Se debe recalcular
-            return std::chrono::seconds(15);
+            return std::chrono::seconds(5);
+        }
+
+        std::chrono::seconds get_time_worked(unsigned int finished_hallacas)
+        {
+            return std::chrono::seconds(5 * finished_hallacas);
+        }
+
+        void set_activity(std::string activity)
+        {
+            this->activity = activity;
+        }
+
+        void set_status(bool status)
+        {
+            this->status = status;
         }
         
         void run()
         {
-            this->status = true;
-            while(for_tie_up > 0)
-            {
-                std::cout << "I am "<< this->activity << " Hallacas!"<< std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(5));
-                this->finished_hallacas++;
-                this->for_tie_up--;
-            }
+            this->set_status(true);
+            std::cout << "I am "<< this->get_activity() << " Hallacas!"<< std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            this->set_status(false);
         }
 };
-
-int main(int argc, char *argv[])
-{    
-    TieUpHallaca carlos = TieUpHallaca(0, 4);
-    std::cout << "Finished Hallacas: "<< carlos.get_finished_hallacas() << std::endl;
-    std::cout << "For tie up: "<< carlos.get_for_tie_up() << std::endl;
-    carlos.run();
-    std::cout << "Finished Hallacas: "<< carlos.get_finished_hallacas() << std::endl;
-    std::cout << "For tie up: "<< carlos.get_for_tie_up() << std::endl;
-    
-    return EXIT_SUCCESS;
-}

@@ -5,29 +5,16 @@
 class PutDough
 {
     private:
-        unsigned int leaves_with_dough, leaves;
         std::string activity;
         bool status;
         
     public:
         PutDough()
         {
-            this->leaves = this->leaves_with_dough = 0;
             this->activity = "";
             this->status = false;
         }
 
-        PutDough(const unsigned int l, const unsigned int lwd) :
-                                    leaves(l),
-                                    leaves_with_dough(lwd),
-                                    activity(""),
-                                    status(false){}
-                           
-        unsigned int get_leaves_with_dough(void)
-        {
-            return this->leaves_with_dough;
-        }
-        
         std::string get_activity(void)
         {
             return this->activity;
@@ -49,37 +36,31 @@ class PutDough
                 return std::chrono::seconds(4);
         }
 
-        std::chrono::seconds get_time_worked(void)
+        std::chrono::seconds get_time_worked(unsigned int leaves_with_dough)
         {
-            return std::chrono::seconds(6 * this->leaves_with_dough);
+            return std::chrono::seconds(6 * leaves_with_dough);
+        }
+
+        void set_activity(std::string activity)
+        {
+            this->activity = activity;
+        }
+
+        void set_status(bool status)
+        {
+            this->status = status;
         }
         
         void run(void)
         {
-            this->status = true;
-            while(this->leaves)
-            {
-                this->leaves--;
-                
-                this->activity = "greasing";
-                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-                
-                this->activity = "putting up dough";
-                std::cout << "I am " << this->activity << " to leaves!"<< std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(4));
-
-                this->leaves_with_dough++;
-            }
-            this->status = false;
+            this->set_status(true);
+            this->set_activity("greasing");
+            std::cout << "I am " << this->get_activity() << " leaves!"<< std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            
+            this->set_activity("putting up dough");
+            std::cout << "I am " << this->get_activity() << " to leaves!"<< std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(4));
+            this->set_status(false);
         } 
 };
-
-int main(int argc, char *argv[])
-{   
-     PutDough carly = PutDough(3, 0);
-     std::cout << "Leaves with dough: " << carly.get_leaves_with_dough() << std::endl;
-     carly.run();
-     std::cout << "Leaves with dough: " << carly.get_leaves_with_dough() << std::endl;
-    return EXIT_SUCCESS;
-}

@@ -5,25 +5,13 @@
 class WashLeaves
 {
     private:
-        unsigned int leaves;
         std::string activity;
         bool status, stop;
     public:
         WashLeaves()
         {
-            this->leaves = 0;
             this->activity = "";
             this->status = this->stop = false;
-        }
-        
-        WashLeaves(const unsigned int l) :
-                                    leaves(l),
-                                    activity(""),
-                                    status(false),
-                                    stop(false){}                             
-        unsigned int get_finished_leaves(void)
-        {
-            return this->leaves;
         }
         
         std::string get_activity(void)
@@ -38,6 +26,11 @@ class WashLeaves
             else
                 return "Not Busy";
         }
+
+        bool get_stop(void)
+        {
+            return this->stop;
+        }
         
         std::chrono::seconds get_busy_time(void)
         {
@@ -49,40 +42,43 @@ class WashLeaves
                 return std::chrono::seconds(2);
         }
 
-        std::chrono::seconds get_time_worked(void)
+        std::chrono::seconds get_time_worked(unsigned int leaves)
         {
-            return std::chrono::seconds(8 * this->leaves);
+            return std::chrono::seconds(8 * leaves);
+        }
+
+        void set_activity(std::string activity)
+        {
+            this->activity = activity;
+        }
+
+        void set_status(bool status)
+        {
+            this->status = status;
+        }
+
+        void set_stop(bool stop)
+        {
+            this->stop = stop;
         }
         
         void run()
         {
-            this->status = true;
-            while(!this->stop)
+            this->set_status(true);
+            while(!this->get_stop())
             {
-                this->activity = "washing";
-                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
+                this->set_activity("washing");
+                std::cout << "I am " << this->get_activity() << " leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 
-                this->activity = "roasting";
-                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
+                this->set_activity("roasting");
+                std::cout << "I am " << this->get_activity() << " leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(4));
                 
-                this->activity = "cutting up";
-                std::cout << "I am " << this->activity << " leaves!"<< std::endl;
+                this->set_activity("cutting up");
+                std::cout << "I am " << this->get_activity() << " leaves!"<< std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
-                
-                leaves++;
-                std::cin >> this->stop; 
             } 
-            this->status = false;
+            this->set_status(false);
         }
 };
-
-int main(int argc, char *argv[])
-{    
-     WashLeaves lewis = WashLeaves();
-     std::cout << "Finished leaves: " << lewis.get_finished_leaves() << std::endl;
-     lewis.run();
-     std::cout << "Finished leaves: " << lewis.get_finished_leaves() << std::endl;
-    return EXIT_SUCCESS;
-}

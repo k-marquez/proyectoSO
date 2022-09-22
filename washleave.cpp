@@ -40,6 +40,11 @@ class WashLeaves
             else
                 return std::chrono::seconds(2);
         }
+
+        std::chrono::seconds get_time_worked(void)
+        {
+            return std::chrono::seconds(8 * this->leaves);
+        }
         
         void run()
         {

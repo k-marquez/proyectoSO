@@ -3,9 +3,12 @@
 #include <thread>
 
 // At least 80 grams of stew are placed in each hallaca
-const float min_stew_gr = 80.0;
+const float MIN_STEW_GR = 80.0;
 // Amount of grams to put in the extra dough
-const unsigned int increment_of_stew = 15;
+const unsigned int INCREMENT_OF_STEW = 15;
+
+//Temporary stack of leaves with dough
+unsigned int Leaves_With_Dough = 10;
 
 class PutStew
 {
@@ -17,7 +20,7 @@ class PutStew
         // Generates a random amount of grs to put in dough
         float amount_stew_to_putting(void)
         {
-            return min_stew_gr + rand() % increment_of_stew; 
+            return MIN_STEW_GR + rand() % INCREMENT_OF_STEW; 
         }
         
         bool stop_washing_leaves(void)
@@ -28,8 +31,8 @@ class PutStew
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 return true;
             }
-            else
-                return false;
+            
+            return false;
         }
         
     public:
@@ -41,7 +44,7 @@ class PutStew
         }
         
         PutStew(const float as, const unsigned int mlsg) :
-                                    available_stew(as*1000),
+                                    available_stew(as * 1000),
                                     min_limit_stew_gr(mlsg),
                                     activity(""),
                                     status(false),
@@ -65,7 +68,7 @@ class PutStew
         std::string get_status(void)
         {
             if(this->status)
-                return "Busy: "+this->get_activity();
+                return "Busy: " + this->get_activity();
             else
                 return "Not Busy";
         }
@@ -76,8 +79,11 @@ class PutStew
         }
         
         std::chrono::seconds get_busy_time(void)
-        { 
-               return std::chrono::seconds(4);
+        {
+            if(this->get_activity() == "putting up")
+                return std::chrono::seconds(4);
+
+            return std::chrono::seconds(2);
         }
 
         std::chrono::seconds get_time_worked(unsigned int leaves_with_dough)
@@ -108,25 +114,44 @@ class PutStew
         void run()
         {
             float grs_stew = 0.;
-            this->set_status(true);
-            while(this->get_available_stew() > min_stew_gr+increment_of_stew)
-            {
-                grs_stew = this->amount_stew_to_putting();
-                this->set_available_stew(grs_stew);
+            unsigned int time_for_waiting = 2;
+            
+            while(this->get_available_stew() > 0.)
+            {            
+                this->set_status(true);
+                while(Leaves_With_Dough > 0 and this->get_available_stew() > 0.)
+                {
+                    grs_stew = this->amount_stew_to_putting();
+                    //Placing the rest of stew
+                    if(this->get_available_stew() < MIN_STEW_GR)
+                        grs_stew = this->get_available_stew();
+                        
+                    this->set_available_stew(grs_stew);
 
-                this->set_activity("putting up");
-                std::cout << "I am " << this->get_activity() <<" "<< grs_stew << " grs of stew!"<< std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
+                    this->set_activity("putting up");
+                    std::cout << "I am " << this->get_activity() << " " << grs_stew << " grs of stew!"<< std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    
+                    this->set_activity("closing");
+                    std::cout << "I am " << this->get_activity() << " the hallaca!"<< std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    
+                    Leaves_With_Dough--;
+                    
+                    if(!this->get_notified())
+                        this->set_notified(this->stop_washing_leaves());
+                }
                 
-                this->set_activity("closing");
-                std::cout << "I am " << this->get_activity() << " the hallaca!"<< std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-                
-                if(!this->get_notified())
-                    this->set_notified(this->stop_washing_leaves());
-            }
-            set_status(false);
-        }  
+                this->set_status(false);
+                this->set_activity("");
+                while(Leaves_With_Dough <= 0)
+                {
+                     std::cout << "I am not busy, waiting for leaves with dough. Hurry up!"<< std::endl;
+                     std::this_thread::sleep_for(std::chrono::seconds(time_for_waiting++));
+                }
+                time_for_waiting = 2;
+        }
+    }       
 };
 
 int main(int argc, char *argv[])

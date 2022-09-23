@@ -68,7 +68,7 @@ class TieUpHallaca
             while(true)
             {
                 this->set_status(true);
-                this->set_activity("tie up");
+                this->set_activity("tying up");
                 while(For_Tie_Up > 0)
                 {
                     For_Tie_Up--; // Temporary decrement of stack
@@ -83,7 +83,7 @@ class TieUpHallaca
                 this->set_activity("");
                 while(For_Tie_Up <= 0)
                 {
-                    std::cout << "I am not busy, waiting for hallacas for tie up. Hurry up!"<< std::endl;
+                    std::cout << "I am not busy, waiting for hallacas to tie up. Hurry up!"<< std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(time_for_waiting++));
                 }
                 time_for_waiting = 2;

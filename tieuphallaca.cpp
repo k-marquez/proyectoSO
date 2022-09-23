@@ -2,16 +2,26 @@
 #include <chrono>
 #include <thread>
 
+//Temporary stack of hallacas for tie up and finished hallacas
+unsigned int For_Tie_Up = 2, Hallacas = 0;
+
 class TieUpHallaca
 {
     private:
+        unsigned int count_hallacas;
         std::string activity;
         bool status;
     public:
         TieUpHallaca()
         {
-            this->activity = "tie up";
+            this->count_hallacas = 0;
+            this->activity = "";
             this->status = false;
+        }
+        
+        unsigned int get_count_hallacas(void)
+        {
+            return this->count_hallacas;
         }
         
         std::string get_activity(void)
@@ -32,9 +42,14 @@ class TieUpHallaca
             return std::chrono::seconds(5);
         }
 
-        std::chrono::seconds get_time_worked(unsigned int finished_hallacas)
+        std::chrono::seconds get_time_worked(void)
         {
-            return std::chrono::seconds(5 * finished_hallacas);
+            return std::chrono::seconds(5 * this->get_count_hallacas());
+        }
+        
+        void increment_count_hallacas(void)
+        {
+            this->count_hallacas++;
         }
 
         void set_activity(std::string activity)
@@ -49,9 +64,35 @@ class TieUpHallaca
         
         void run()
         {
-            this->set_status(true);
-            std::cout << "I am "<< this->get_activity() << " Hallacas!"<< std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-            this->set_status(false);
+            short time_for_waiting = 2;
+            while(true)
+            {
+                this->set_status(true);
+                this->set_activity("tie up");
+                while(For_Tie_Up > 0)
+                {
+                    For_Tie_Up--; // Temporary decrement of stack
+                    std::cout << "I am "<< this->get_activity() << " Hallacas!"<< std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                    
+                    Hallacas++; // Temporary increment of count hallacas
+                    this->increment_count_hallacas();
+                }
+
+                this->set_status(false);
+                this->set_activity("");
+                while(For_Tie_Up <= 0)
+                {
+                    std::cout << "I am not busy, waiting for hallacas for tie up. Hurry up!"<< std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(time_for_waiting++));
+                }
+                time_for_waiting = 2;
+            }
         }
 };
+
+int main(int argc, char *argv[])
+{
+    TieUpHallaca marian = TieUpHallaca();
+    marian.run();
+}

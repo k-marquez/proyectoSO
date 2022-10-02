@@ -8,42 +8,64 @@
 
 int main(int argc, char *argv[])
 {
-    pid_t pid_wl;
     int status;
-    std::cout << "Running washleaves:" << std::endl;
-    pid_wl = fork();
-    switch (pid_wl) {
-      case -1:
-      {    
-          perror("fork");
-          break;
-      }
-      case 0:
-      {    
-          std::string cmd = "qterminal -e sh -c ./washleaves.out";
-          system(cmd.c_str());
-          //execl("./washleaves.out", (char *) 0);
-          perror("exec");
-          break;
-      }
-      default:
-      {
-          int times_to_kill = 3;
-          while(true)
-          {
-              printf("Washleaves pid: %i\n", pid_wl);
-              std::this_thread::sleep_for(
-                  std::chrono::seconds(times_to_kill--));
-              if(times_to_kill <= 0)
-              {            
-                  std::cout << "Killing process washleaves" << std::endl;
-                  kill(pid_wl,SIGSTOP);
-                  break;
-              }
-                  
-          }
-        break;
-      }
+    pid_t processes_id[4], child;
+    std::string processes[] = 
+        {
+            "./washleaves.out",
+            "./putdough.out",
+            "./putstew.out",
+            "./tieuphallaca.out"
+        };
+    
+    size_t pos = 0;
+    short i;
+    
+    std::cout << "Invoke processes:" << std::endl;
+    for (i = 0; i < 4; i++)
+    {
+        pos = processes[i].find("./");
+        std::cout << "\t" << processes[i].substr(pos) << std::endl;
+        switch (child = fork())
+        {
+            case -1:
+            {
+                return -1;
+            }
+            case 0:
+            {
+                execlp("/bin/qterminal",
+                       "/bin/qterminal",
+                       "-e",
+                       processes[i].c_str(),
+                       NULL);
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+            }
+            default:
+            {
+                processes_id[i] = child;
+            }
+        }
+    }
+    
+    int times_to_kill = 5;
+    bool running = true;
+    while(running)
+    {
+        printf("Waiting times to kill processes: %i\n", times_to_kill);
+        std::this_thread::sleep_for(std::chrono::seconds(times_to_kill--));
+        if(times_to_kill <= 0)
+        {
+            for(i = 0; i < 4; i++)
+            {
+                pos = processes[i].find("./");
+                std::cout << "Killing process "
+                          << processes[i].substr(pos)
+                          << std::endl;
+                kill(processes_id[i],SIGTERM);
+            }
+            running = false;
+        }
     }
     return EXIT_SUCCESS;
 }

@@ -3,12 +3,21 @@
 #include <thread>
 
 #include <unistd.h>
-#include <spawn.h>
-#include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#include "memorykey.h"
+
+void initSharedMemory(int *&, int &);
 
 int main(int argc, char *argv[])
 {
-    int status;
+    int shrm_id, *leavesStack;
+    
+    initSharedMemory(leavesStack, shrm_id);
+
+    /*int status;
     pid_t processes_id[4], child;
     std::string processes[] = 
         {
@@ -66,6 +75,41 @@ int main(int argc, char *argv[])
             }
             running = false;
         }
-    }
+    }*/
+    
+    std::cout << "-----Out function-----"<< std::endl;
+    std::cout << "shrm_id: " << shrm_id << std::endl;
+    std::cout << "Direction of shared memory: " << leavesStack << std::endl;
+    std::cout << "Content of shared memory: " << *leavesStack << std::endl;
+    
+    *leavesStack = 19970217;
+    
+    std::cout << "Updated content of shared memory: "
+              << *leavesStack << std::endl;
+    
+    //Unlinking shared memory to BPC
+    shmdt(leavesStack);
+    //Deleting shared memory
+    shmctl(shrm_id, IPC_RMID, 0);
     return EXIT_SUCCESS;
 }
+
+void initSharedMemory(int *&lS, int &shrm_id)
+{
+    //Creating a unique key to init shared memory
+    key_t key = ftok(SHRMFILE, SHRMKEY);
+    //Init shared memory
+    shrm_id = shmget(key, 2, 0777|IPC_CREAT);
+    //Linking shared memory to BPC
+    lS = (int*)shmat(shrm_id, 0, 0);
+    
+    std::cout << "Key: " << key << std::endl;
+    std::cout << "shrm_id: " << shrm_id << std::endl;
+    std::cout << "Direction of shared memory: " << lS << std::endl;
+    std::cout << "Content of shared memory: " << *lS << std::endl;
+    
+    *lS = 17021997;
+    
+    std::cout << "Updated content of shared memory: " << *lS << std::endl;
+}
+

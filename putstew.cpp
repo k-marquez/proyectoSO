@@ -2,6 +2,8 @@
 #include <chrono>
 #include <thread>
 
+#include "memorykey.h"
+
 // At least 80 grams of stew are placed in each hallaca
 const float MIN_STEW_GR = 80.0;
 // Amount of grams to put in the extra dough

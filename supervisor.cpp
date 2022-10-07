@@ -80,12 +80,22 @@ int main(int argc, char *argv[])
     std::cout << "-----Out function-----"<< std::endl;
     std::cout << "shrm_id: " << shrm_id << std::endl;
     std::cout << "Direction of shared memory: " << leavesStack << std::endl;
-    std::cout << "Content of shared memory: " << *leavesStack << std::endl;
+    std::cout << "Content of shared memory:\n"
+              << "[0]" << *(leavesStack + 0) << std::endl
+              << "[1]" << *(leavesStack + 1) << std::endl
+              << "[2]" << *(leavesStack + 2) << std::endl
+              << "[3]" << *(leavesStack + 3) << std::endl;
     
-    *leavesStack = 19970217;
+    *(leavesStack + 0) = 19970217;
+    *(leavesStack + 1) = 1997021;
+    *(leavesStack + 2) = 199702;
+    *(leavesStack + 3) = 19970;
     
-    std::cout << "Updated content of shared memory: "
-              << *leavesStack << std::endl;
+    std::cout << "Updated content of shared memory:\n"
+              << "[0]" << *(leavesStack + 0) << std::endl
+              << "[1]" << *(leavesStack + 1) << std::endl
+              << "[2]" << *(leavesStack + 2) << std::endl
+              << "[3]" << *(leavesStack + 3) << std::endl;
     
     //Unlinking shared memory to BPC
     shmdt(leavesStack);
@@ -102,7 +112,7 @@ void initSharedMemory(int *&lS, int &shrm_id)
     //Init shared memory
     if(key != -1)
     {
-        shrm_id = shmget(key, sizeof(int), 0777|IPC_CREAT);
+        shrm_id = shmget(key, sizeof(int) * 4, 0777|IPC_CREAT);
         
         if(shrm_id != -1)
         {
@@ -113,10 +123,21 @@ void initSharedMemory(int *&lS, int &shrm_id)
                 std::cout << "Key: " << key << std::endl;
                 std::cout << "shrm_id: " << shrm_id << std::endl;
                 std::cout << "Direction of shared memory: " << lS << std::endl;
-                std::cout << "Content of shared memory: " << *lS << std::endl;
+                std::cout << "Content of shared memory:\n"
+                          << "[0]" << *(lS + 0) << std::endl
+                          << "[1]" << *(lS + 1) << std::endl
+                          << "[2]" << *(lS + 2) << std::endl
+                          << "[3]" << *(lS + 3) << std::endl;
                 //Temporary test                
-                *lS = 17021997;
-                std::cout << "Updated content of shared memory: " << *lS << std::endl;
+                *(lS + 0) = 17021997;
+                *(lS + 1) = 1702199;
+                *(lS + 2) = 170219;
+                *(lS + 3) = 17021;
+                std::cout << "Updated content of shared memory:\n"
+                          << "[0]" << *(lS + 0) << std::endl
+                          << "[1]" << *(lS + 1) << std::endl
+                          << "[2]" << *(lS + 2) << std::endl
+                          << "[3]" << *(lS + 3) << std::endl;
             }
             else
                 std::cout << "Error linking shared memory to BPC" << std::endl;

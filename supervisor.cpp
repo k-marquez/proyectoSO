@@ -96,20 +96,35 @@ int main(int argc, char *argv[])
 
 void initSharedMemory(int *&lS, int &shrm_id)
 {
+
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
     //Init shared memory
-    shrm_id = shmget(key, 2, 0777|IPC_CREAT);
-    //Linking shared memory to BPC
-    lS = (int*)shmat(shrm_id, 0, 0);
-    
-    std::cout << "Key: " << key << std::endl;
-    std::cout << "shrm_id: " << shrm_id << std::endl;
-    std::cout << "Direction of shared memory: " << lS << std::endl;
-    std::cout << "Content of shared memory: " << *lS << std::endl;
-    
-    *lS = 17021997;
-    
-    std::cout << "Updated content of shared memory: " << *lS << std::endl;
+    if(key != -1)
+    {
+        shrm_id = shmget(key, sizeof(int), 0777|IPC_CREAT);
+        
+        if(shrm_id != -1)
+        {
+            //Linking shared memory to BPC
+            lS = (int*)shmat(shrm_id, 0, 0);
+            if(lS != nullptr)
+            {
+                std::cout << "Key: " << key << std::endl;
+                std::cout << "shrm_id: " << shrm_id << std::endl;
+                std::cout << "Direction of shared memory: " << lS << std::endl;
+                std::cout << "Content of shared memory: " << *lS << std::endl;
+                //Temporary test                
+                *lS = 17021997;
+                std::cout << "Updated content of shared memory: " << *lS << std::endl;
+            }
+            else
+                std::cout << "Error linking shared memory to BPC" << std::endl;
+        }
+        else
+            std::cout << "Error creating shared memory" << std::endl;
+    }
+    else
+        std::cout << "Error creating shared memory id" << std::endl;
 }
 

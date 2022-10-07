@@ -1,37 +1,53 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <csignal>
 
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
+#include <sys/sem.h>
 #include <sys/shm.h>
 
 #include "memorykey.h"
 
-void initSharedMemory(int *&, int &);
+void initSharedMemory(key_t ,int *&, int &);
+void initSemaphores(key_t , int &);
 
 int main(int argc, char *argv[])
 {
-    int shrm_id, *leavesStack;
-    
-    initSharedMemory(leavesStack, shrm_id);
-
-    /*int status;
+    int id_shr_memory, *stacks, status, ids_semaphores;
+    size_t pos = 0;
+    short i;
     pid_t processes_id[4], child;
     std::string processes[] = 
         {
             "./washleaves.out",
             "./putdough.out",
-            "./putstew.out",
+            "./putstew.out 1 300",
             "./tieuphallaca.out"
         };
     
-    size_t pos = 0;
-    short i;
+    //Creating a unique key to init shared memory
+    key_t key = ftok(SHRMFILE, SHRMKEY);
+
+    //Init shared memory
+    initSharedMemory(key, stacks, id_shr_memory);
+    initSemaphores(key, ids_semaphores);
+    
+    std::cout << "-----Out function-----"<< std::endl;
+    std::cout << "id_shr_memory: " << id_shr_memory << std::endl;
+    std::cout << "Direction of shared memory: " << stacks << std::endl;
+    std::cout << "Content of shared memory:\n"
+              << "[0]" << *(stacks + 0) << std::endl
+              << "[1]" << *(stacks + 1) << std::endl
+              << "[2]" << *(stacks + 2) << std::endl
+              << "[3]" << *(stacks + 3) << std::endl;
+
+
     
     std::cout << "Invoke processes:" << std::endl;
-    for (i = 0; i < 4; i++)
+    /*for (i = 0; i < 4; i++)
     {
         pos = processes[i].find("./");
         std::cout << "\t" << processes[i].substr(pos) << std::endl;
@@ -55,9 +71,9 @@ int main(int argc, char *argv[])
                 processes_id[i] = child;
             }
         }
-    }
+    }*/
     
-    int times_to_kill = 5;
+    int times_to_kill = 7;
     bool running = true;
     while(running)
     {
@@ -65,75 +81,46 @@ int main(int argc, char *argv[])
         std::this_thread::sleep_for(std::chrono::seconds(times_to_kill--));
         if(times_to_kill <= 0)
         {
-            for(i = 0; i < 4; i++)
+            /*for(i = 0; i < 4; i++)
             {
                 pos = processes[i].find("./");
                 std::cout << "Killing process "
                           << processes[i].substr(pos)
                           << std::endl;
                 kill(processes_id[i],SIGTERM);
-            }
+            }*/
             running = false;
         }
-    }*/
-    
-    std::cout << "-----Out function-----"<< std::endl;
-    std::cout << "shrm_id: " << shrm_id << std::endl;
-    std::cout << "Direction of shared memory: " << leavesStack << std::endl;
-    std::cout << "Content of shared memory:\n"
-              << "[0]" << *(leavesStack + 0) << std::endl
-              << "[1]" << *(leavesStack + 1) << std::endl
-              << "[2]" << *(leavesStack + 2) << std::endl
-              << "[3]" << *(leavesStack + 3) << std::endl;
-    
-    *(leavesStack + 0) = 19970217;
-    *(leavesStack + 1) = 1997021;
-    *(leavesStack + 2) = 199702;
-    *(leavesStack + 3) = 19970;
-    
-    std::cout << "Updated content of shared memory:\n"
-              << "[0]" << *(leavesStack + 0) << std::endl
-              << "[1]" << *(leavesStack + 1) << std::endl
-              << "[2]" << *(leavesStack + 2) << std::endl
-              << "[3]" << *(leavesStack + 3) << std::endl;
+    }
     
     //Unlinking shared memory to BPC
-    shmdt(leavesStack);
+    shmdt(stacks);
     //Deleting shared memory
-    shmctl(shrm_id, IPC_RMID, 0);
+    shmctl(id_shr_memory, IPC_RMID, 0);
+    //Deleting semaphores
+    semctl(ids_semaphores,4,IPC_RMID,0);
     return EXIT_SUCCESS;
 }
 
-void initSharedMemory(int *&lS, int &shrm_id)
+void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
 {
-
-    //Creating a unique key to init shared memory
-    key_t key = ftok(SHRMFILE, SHRMKEY);
     //Init shared memory
     if(key != -1)
     {
-        shrm_id = shmget(key, sizeof(int) * 4, 0777|IPC_CREAT);
+        id_shr_memory = shmget(key, sizeof(int) * 4, 0777|IPC_CREAT);
         
-        if(shrm_id != -1)
+        if(id_shr_memory != -1)
         {
             //Linking shared memory to BPC
-            lS = (int*)shmat(shrm_id, 0, 0);
+            lS = (int*)shmat(id_shr_memory, 0, 0);
             if(lS != nullptr)
             {
+                *(lS + 0) = *(lS + 1) = *(lS + 2) = *(lS + 3) = 0;
+                
                 std::cout << "Key: " << key << std::endl;
-                std::cout << "shrm_id: " << shrm_id << std::endl;
+                std::cout << "id_shr_memory: " << id_shr_memory << std::endl;
                 std::cout << "Direction of shared memory: " << lS << std::endl;
                 std::cout << "Content of shared memory:\n"
-                          << "[0]" << *(lS + 0) << std::endl
-                          << "[1]" << *(lS + 1) << std::endl
-                          << "[2]" << *(lS + 2) << std::endl
-                          << "[3]" << *(lS + 3) << std::endl;
-                //Temporary test                
-                *(lS + 0) = 17021997;
-                *(lS + 1) = 1702199;
-                *(lS + 2) = 170219;
-                *(lS + 3) = 17021;
-                std::cout << "Updated content of shared memory:\n"
                           << "[0]" << *(lS + 0) << std::endl
                           << "[1]" << *(lS + 1) << std::endl
                           << "[2]" << *(lS + 2) << std::endl
@@ -148,4 +135,20 @@ void initSharedMemory(int *&lS, int &shrm_id)
     else
         std::cout << "Error creating shared memory id" << std::endl;
 }
+
+
+void initSemaphores(key_t key, int &ids_semaphores)
+{
+    ids_semaphores = semget(key, 4, 0600 | IPC_CREAT);
+    
+    //Init value for semaphores
+    semctl(ids_semaphores, 0, SETVAL, 0);
+    semctl(ids_semaphores, 1, SETVAL, 0);
+    semctl(ids_semaphores, 2, SETVAL, 0);
+    semctl(ids_semaphores, 3, SETVAL, 0);
+}
+
+
+
+
 

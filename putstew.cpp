@@ -26,7 +26,7 @@ class PutStew
         unsigned int count_for_tie_up;
         std::string activity;
         bool status, notified;
-        struct sembuf lock[2], unlock[2];
+        struct sembuf lock[3], unlock[3];
         
         // Generates a random amount of grs to put in dough
         float amount_stew_to_putting(void)
@@ -34,12 +34,14 @@ class PutStew
             return MIN_STEW_GR + rand() % INCREMENT_OF_STEW; 
         }
         
-        bool stop_washing_leaves(pid_t pid)
+        bool stop_washing_leaves(int *&lS, int ids_semaphores)
         {
             if(this->get_available_stew() <= this->get_min_limit_stew_gr())
             {
                 std::cout << "Sending notification to stop washing leaves!" << std::endl;
-                kill(pid,SIGUSR1);
+                semop(ids_semaphores, &(this->lock[2]), 1);
+                *(lS + 4) = 1;
+                semop(ids_semaphores, &(this->unlock[2]), 1);
                 return true;
             }
             
@@ -69,6 +71,14 @@ class PutStew
             this->unlock[1].sem_num = 2;
             this->unlock[1].sem_op = 1;
             this->unlock[1].sem_flg = 0;
+            //Lock semaphore four
+            this->lock[2].sem_num = 3;
+            this->lock[2].sem_op = -1;
+            this->lock[2].sem_flg = 0;
+            //Unlock semaphore four
+            this->unlock[2].sem_num = 3;
+            this->unlock[2].sem_op = 1;
+            this->unlock[2].sem_flg = 0;
         }
         
         PutStew(const float as, const unsigned int mlsg) :
@@ -95,6 +105,14 @@ class PutStew
             this->unlock[1].sem_num = 2;
             this->unlock[1].sem_op = 1;
             this->unlock[1].sem_flg = 0;
+            //Lock semaphore four
+            this->lock[2].sem_num = 3;
+            this->lock[2].sem_op = -1;
+            this->lock[2].sem_flg = 0;
+            //Unlock semaphore four
+            this->unlock[2].sem_num = 3;
+            this->unlock[2].sem_op = 1;
+            this->unlock[2].sem_flg = 0;
         }
 
         float get_available_stew(void)
@@ -178,7 +196,7 @@ class PutStew
             this->notified = notified;
         }
 
-        void run(int *&lS, int ids_semaphores, int processes_to_stop)
+        void run(int *&lS, int ids_semaphores)
         {
             float grs_stew = 0.;
             unsigned int time_for_waiting = 2;
@@ -213,7 +231,7 @@ class PutStew
                     this->increment_count_for_tie_up(lS, ids_semaphores);
                     
                     if(!this->get_notified())
-                        this->set_notified(this->stop_washing_leaves((pid_t)processes_to_stop));
+                        this->set_notified(this->stop_washing_leaves(lS, ids_semaphores));
                 }
                 
                 this->set_status(false);
@@ -254,7 +272,7 @@ int main(int argc, char *argv[])
 
     PutStew kevin = PutStew(atof(argv[1]), atof(argv[2]));
     std::cout << "Gr of stew: " << kevin.get_available_stew() << std::endl;
-    kevin.run(stacks, ids_semaphores,atoi(argv[3]));
+    kevin.run(stacks, ids_semaphores);
 
     //Unlinking shared memory to BPC
     shmdt(stacks);

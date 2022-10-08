@@ -20,7 +20,7 @@ class TieUpHallaca
         unsigned int count_hallacas;
         std::string activity;
         bool status;
-        struct sembuf lock[2], unlock[2];
+        struct sembuf lock, unlock;
     public:
         TieUpHallaca()
         {
@@ -28,21 +28,13 @@ class TieUpHallaca
             this->activity = "";
             this->status = false;
             //Lock semaphore three
-            this->lock[0].sem_num = 2;
-            this->lock[0].sem_op = -1;
-            this->lock[0].sem_flg = 0;
+            this->lock.sem_num = 2;
+            this->lock.sem_op = -1;
+            this->lock.sem_flg = 0;
             //Unlock semaphore three
-            this->unlock[0].sem_num = 2;
-            this->unlock[0].sem_op = 1;
-            this->unlock[0].sem_flg = 0;
-            //Lock semaphore four
-            this->lock[1].sem_num = 3;
-            this->lock[1].sem_op = -1;
-            this->lock[1].sem_flg = 0;
-            //Unlock semaphore four
-            this->unlock[1].sem_num = 3;
-            this->unlock[1].sem_op = 1;
-            this->unlock[1].sem_flg = 0;
+            this->unlock.sem_num = 2;
+            this->unlock.sem_op = 1;
+            this->unlock.sem_flg = 0;
         }
         
         unsigned int get_count_hallacas(void)
@@ -76,17 +68,15 @@ class TieUpHallaca
         void decrement_leaves_with_stew(int *&lS, int ids_semaphores)
         {
             //Take a hallaca leaf with stew from the stack
-            semop(ids_semaphores, &(this->lock[0]), 1);
+            semop(ids_semaphores, &(this->lock), 1);
             *(lS + 2) -= 1;
-            semop(ids_semaphores, &(this->unlock[0]), 1);
+            semop(ids_semaphores, &(this->unlock), 1);
         }
         
         void increment_count_hallacas(int *&lS, int ids_semaphores)
         {
             this->count_hallacas++;
-            semop(ids_semaphores, &(this->lock[1]), 1);
             *(lS + 3) += 1;
-            semop(ids_semaphores, &(this->unlock[1]), 1);
         }
 
         void set_activity(std::string activity)

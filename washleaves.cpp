@@ -24,7 +24,7 @@ class WashLeaves
         unsigned int count_leaves_washed;
         std::string activity;
         bool status, stop;
-        struct sembuf lock, unlock;
+        struct sembuf lock[2], unlock[2];
     public:
         WashLeaves()
         {
@@ -32,13 +32,21 @@ class WashLeaves
             this->activity = "";
             this->status = this->stop = false;
             //Lock semaphore one
-            this->lock.sem_num = 0;
-	        this->lock.sem_op = -1;
-	        this->lock.sem_flg = 0;
+            this->lock[0].sem_num = 0;
+	        this->lock[0].sem_op = -1;
+	        this->lock[0].sem_flg = 0;
 	        //Unlock semaphore one
-	        this->unlock.sem_num = 0;
-	        this->unlock.sem_op = 1;
-	        this->unlock.sem_flg = 0;
+	        this->unlock[0].sem_num = 0;
+	        this->unlock[0].sem_op = 1;
+	        this->unlock[0].sem_flg = 0;
+            //Lock semaphore four
+            this->lock[1].sem_num = 3;
+            this->lock[1].sem_op = -1;
+            this->lock[1].sem_flg = 0;
+            //Unlock semaphore four
+            this->unlock[1].sem_num = 3;
+            this->unlock[1].sem_op = 1;
+            this->unlock[1].sem_flg = 0;
         }
         
         unsigned int get_count_leaves_washed(void)
@@ -82,9 +90,9 @@ class WashLeaves
         void increment_count_leaves_washed(int *&lS, int ids_semaphores)
         {
             this->count_leaves_washed++;
-            semop(ids_semaphores, &(this->lock), 1);
+            semop(ids_semaphores, &(this->lock[0]), 1);
             *(lS + 0) += 1 + rand() % INCREMENT_OF_LEAVES;
-            semop(ids_semaphores, &(this->unlock), 1);
+            semop(ids_semaphores, &(this->unlock[0]), 1);
         }
 
         void set_activity(std::string activity)
@@ -97,9 +105,12 @@ class WashLeaves
             this->status = status;
         }
 
-        void set_stop(bool stop)
+        void set_stop(int *&lS, int ids_semaphores)
         {
-            this->stop = stop;
+            semop(ids_semaphores, &(this->lock[1]), 1);
+            if(*(lS + 4) == 1)
+                this->stop = true;
+            semop(ids_semaphores, &(this->unlock[1]), 1);
         }
         
         void run(int *&lS, int ids_semaphores)
@@ -123,17 +134,16 @@ class WashLeaves
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 
                 this->increment_count_leaves_washed(lS, ids_semaphores);
+                this->set_stop(lS, ids_semaphores);
             } 
             this->set_status(false);
+            std::cout << "I am not washing anymore leaves!" << std::endl;
         }
 };
 
 int main(int argc, char *argv[])
 {
     int id_shr_memory, *stacks, status, ids_semaphores;
-
-    //Manage signal SIGUSR1
-    signal(SIGUSR1,signal_handler);
 
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
@@ -176,11 +186,4 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
 void initSemaphores(key_t key, int &ids_semaphores)
 {
     ids_semaphores = semget(key, 4, 0600);
-}
-
-void signal_handler(int sig_recieve) {
-    signal(SIGUSR1,signal_handler);
-    std::cout<< "Recibí la señal de parar de lavar..!"<<std::endl;
-    std::cout << "Stop process washing leaves! "  << sig_recieve << std::endl;
-    sleep(20);
 }

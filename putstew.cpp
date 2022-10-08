@@ -34,12 +34,12 @@ class PutStew
             return MIN_STEW_GR + rand() % INCREMENT_OF_STEW; 
         }
         
-        bool stop_washing_leaves(void)
+        bool stop_washing_leaves(pid_t pid)
         {
             if(this->get_available_stew() <= this->get_min_limit_stew_gr())
             {
                 std::cout << "Sending notification to stop washing leaves!" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                kill(pid,SIGUSR1);
                 return true;
             }
             
@@ -56,7 +56,7 @@ class PutStew
             //Lock semaphore two
             this->lock[0].sem_num = 1;
             this->lock[0].sem_op = -1;
-            this->lock[0].sem_flg = IPC_NOWAIT;
+            this->lock[0].sem_flg = 0;
             //Unlock semaphore two
             this->unlock[0].sem_num = 1;
             this->unlock[0].sem_op = 1;
@@ -64,7 +64,7 @@ class PutStew
             //Lock semaphore three
             this->lock[1].sem_num = 2;
             this->lock[1].sem_op = -1;
-            this->lock[1].sem_flg = IPC_NOWAIT;
+            this->lock[1].sem_flg = 0;
             //Unlock semaphore three
             this->unlock[1].sem_num = 2;
             this->unlock[1].sem_op = 1;
@@ -77,7 +77,25 @@ class PutStew
                                     count_for_tie_up(0),
                                     activity(""),
                                     status(false),
-                                    notified(false){}
+                                    notified(false)
+        {
+            //Lock semaphore two
+            this->lock[0].sem_num = 1;
+            this->lock[0].sem_op = -1;
+            this->lock[0].sem_flg = 0;
+            //Unlock semaphore two
+            this->unlock[0].sem_num = 1;
+            this->unlock[0].sem_op = 1;
+            this->unlock[0].sem_flg = 0;
+            //Lock semaphore three
+            this->lock[1].sem_num = 2;
+            this->lock[1].sem_op = -1;
+            this->lock[1].sem_flg = 0;
+            //Unlock semaphore three
+            this->unlock[1].sem_num = 2;
+            this->unlock[1].sem_op = 1;
+            this->unlock[1].sem_flg = 0;
+        }
 
         float get_available_stew(void)
         {
@@ -115,18 +133,26 @@ class PutStew
         std::chrono::seconds get_busy_time(void)
         {
             if(this->get_activity() == "putting up")
-                return std::chrono::seconds(5);
+                return std::chrono::seconds(3);
             return std::chrono::seconds(2);
         }
 
         std::chrono::seconds get_time_worked(void)
         {
-            return std::chrono::seconds(7 * this->get_count_for_tie_up());
+            return std::chrono::seconds(5 * this->get_count_for_tie_up());
         }
 
         void set_available_stew(float grs_stew)
         {
             this->available_stew -= grs_stew;
+        }
+        
+        void decrement_leaves_with_dough(int *&lS, int ids_semaphores)
+        {
+            //Take a hallaca leaf with dough from the stack
+            semop(ids_semaphores, &(this->lock[0]), 1);
+            *(lS + 1) -= 1;
+            semop(ids_semaphores, &(this->unlock[0]), 1);
         }
         
         void increment_count_for_tie_up(int *&lS, int ids_semaphores)
@@ -152,20 +178,20 @@ class PutStew
             this->notified = notified;
         }
 
-        void run(int *&lS, int ids_semaphores)
+        void run(int *&lS, int ids_semaphores, int processes_to_stop)
         {
             float grs_stew = 0.;
             unsigned int time_for_waiting = 2;
             
             while(true)
-            {            
+            {
+                if(this->get_available_stew() <= 0.)
+                    break;
+                    
                 this->set_status(true);
                 while(*(lS + 1) > 0 && this->get_available_stew() > 0.)
                 {
-                    //Take a hallaca leaf with dough from the stack
-                    semop(ids_semaphores, &(this->lock[0]), 1);
-                    *(lS + 1) -= 1;
-                    semop(ids_semaphores, &(this->unlock[0]), 1);
+                    this->decrement_leaves_with_dough(lS, ids_semaphores);
 
                     grs_stew = this->amount_stew_to_putting();
                     //Placing the rest of stew
@@ -175,27 +201,43 @@ class PutStew
                     this->set_available_stew(grs_stew);
 
                     this->set_activity("putting up");
-                    std::cout << "I am " << this->get_activity() << " " << grs_stew << " grs of stew!"<< std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                    std::cout << "I am " << this->get_activity() << " "
+                              << grs_stew << " grs of stew!"<< std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(3));
                     
                     this->set_activity("closing");
-                    std::cout << "I am " << this->get_activity() << " the hallaca!"<< std::endl;
+                    std::cout << "I am " << this->get_activity()
+                              << " the hallaca!"<< std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(2));
                     
                     this->increment_count_for_tie_up(lS, ids_semaphores);
                     
                     if(!this->get_notified())
-                        this->set_notified(this->stop_washing_leaves());
+                        this->set_notified(this->stop_washing_leaves((pid_t)processes_to_stop));
                 }
                 
                 this->set_status(false);
                 this->set_activity("");
+                
                 while(*(lS + 1) <= 0)
                 {
                      std::cout << "I am not busy, waiting for leaves with dough. Hurry up!"<< std::endl;
-                     std::this_thread::sleep_for(std::chrono::seconds(time_for_waiting++));
+                     std::this_thread::sleep_for
+                        (
+                            std::chrono::seconds(time_for_waiting++)
+                        );
                 }
+                
                 time_for_waiting = 2;
+            }
+            
+            while(true)
+            {
+                std::cout << "I am not busy, stew sold out!"<< std::endl;
+                std::this_thread::sleep_for
+                    (
+                        std::chrono::seconds(time_for_waiting++)
+                    );
             }
         }       
 };
@@ -212,7 +254,7 @@ int main(int argc, char *argv[])
 
     PutStew kevin = PutStew(atof(argv[1]), atof(argv[2]));
     std::cout << "Gr of stew: " << kevin.get_available_stew() << std::endl;
-    kevin.run(stacks, ids_semaphores);
+    kevin.run(stacks, ids_semaphores,atoi(argv[3]));
 
     //Unlinking shared memory to BPC
     shmdt(stacks);
@@ -245,10 +287,4 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
 void initSemaphores(key_t key, int &ids_semaphores)
 {
     ids_semaphores = semget(key, 4, 0600);
-    
-    //Init value for semaphores
-    semctl(ids_semaphores, 0, SETVAL, 0);
-    semctl(ids_semaphores, 1, SETVAL, 0);
-    semctl(ids_semaphores, 2, SETVAL, 0);
-    semctl(ids_semaphores, 3, SETVAL, 0);
 }

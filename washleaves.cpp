@@ -13,6 +13,7 @@
 
 void initSharedMemory(key_t ,int *&, int &);
 void initSemaphores(key_t , int &);
+static void signal_handler(int);
 
 class WashLeaves
 {
@@ -30,7 +31,7 @@ class WashLeaves
             //Lock semaphore one
             this->lock.sem_num = 0;
 	        this->lock.sem_op = -1;
-	        this->lock.sem_flg = IPC_NOWAIT;
+	        this->lock.sem_flg = 0;
 	        //Unlock semaphore one
 	        this->unlock.sem_num = 0;
 	        this->unlock.sem_op = 1;
@@ -127,6 +128,7 @@ class WashLeaves
 int main(int argc, char *argv[])
 {
     int id_shr_memory, *stacks, status, ids_semaphores;
+
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
 
@@ -168,10 +170,11 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
 void initSemaphores(key_t key, int &ids_semaphores)
 {
     ids_semaphores = semget(key, 4, 0600);
-    
-    //Init value for semaphores
-    semctl(ids_semaphores, 0, SETVAL, 0);
-    semctl(ids_semaphores, 1, SETVAL, 0);
-    semctl(ids_semaphores, 2, SETVAL, 0);
-    semctl(ids_semaphores, 3, SETVAL, 0);
+}
+
+void signal_handler(int sig_recieve) {
+    signal(SIGUSR1,signal_handler);
+    std::cout<< "Recibí la señal de parar de lavar..!"<<std::endl;
+    std::cout << "Stop process washing leaves! "  << sig_recieve << std::endl;
+    sleep(20);
 }

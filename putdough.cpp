@@ -31,7 +31,7 @@ class PutDough
             //Lock semaphore one
             this->lock[0].sem_num = 0;
             this->lock[0].sem_op = -1;
-            this->lock[0].sem_flg = IPC_NOWAIT;
+            this->lock[0].sem_flg = 0;
             //Unlock semaphore one
             this->unlock[0].sem_num = 0;
             this->unlock[0].sem_op = 1;
@@ -39,7 +39,7 @@ class PutDough
             //Lock semaphore two
             this->lock[1].sem_num = 1;
             this->lock[1].sem_op = -1;
-            this->lock[1].sem_flg = IPC_NOWAIT;
+            this->lock[1].sem_flg = 0;
             //Unlock semaphore two
             this->unlock[1].sem_num = 1;
             this->unlock[1].sem_op = 1;
@@ -176,10 +176,4 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
 void initSemaphores(key_t key, int &ids_semaphores)
 {
     ids_semaphores = semget(key, 4, 0600);
-    
-    //Init value for semaphores
-    semctl(ids_semaphores, 0, SETVAL, 0);
-    semctl(ids_semaphores, 1, SETVAL, 0);
-    semctl(ids_semaphores, 2, SETVAL, 0);
-    semctl(ids_semaphores, 3, SETVAL, 0);
 }

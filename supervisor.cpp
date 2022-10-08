@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     {
         "./washleaves.out",
         "./putdough.out",
-        "./putstew.out 1 300",
+        "./putstew.out 0.5 300",
         "./tieuphallaca.out"
     };
     
@@ -50,11 +50,23 @@ int main(int argc, char *argv[])
             }
             case 0:
             {
-                execlp("/usr/bin/x-terminal-emulator",
-                       "/usr/bin/x-terminal-emulator",
-                       "-e",
-                       processes[i].c_str(),
-                       NULL);
+                if(i != 2)
+                {                
+                    execlp("/usr/bin/x-terminal-emulator",
+                           "/usr/bin/x-terminal-emulator",
+                           "-e",
+                           processes[i].c_str(),
+                           NULL);
+                }
+                else
+                {
+                    execlp("/usr/bin/x-terminal-emulator",
+                           "/usr/bin/x-terminal-emulator",
+                           "-e",
+                           (processes[i] + " " + 
+                            std::to_string(processes_id[0])).c_str(),
+                           NULL);
+                }
                 std::this_thread::sleep_for(std::chrono::seconds(2));
             }
             default:

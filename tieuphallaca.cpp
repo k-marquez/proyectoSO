@@ -30,7 +30,7 @@ class TieUpHallaca
             //Lock semaphore three
             this->lock[0].sem_num = 2;
             this->lock[0].sem_op = -1;
-            this->lock[0].sem_flg = IPC_NOWAIT;
+            this->lock[0].sem_flg = 0;
             //Unlock semaphore three
             this->unlock[0].sem_num = 2;
             this->unlock[0].sem_op = 1;
@@ -38,7 +38,7 @@ class TieUpHallaca
             //Lock semaphore four
             this->lock[1].sem_num = 3;
             this->lock[1].sem_op = -1;
-            this->lock[1].sem_flg = IPC_NOWAIT;
+            this->lock[1].sem_flg = 0;
             //Unlock semaphore four
             this->unlock[1].sem_num = 3;
             this->unlock[1].sem_op = 1;
@@ -65,12 +65,20 @@ class TieUpHallaca
 
         std::chrono::seconds get_busy_time(void)
         {
-            return std::chrono::seconds(5);
+            return std::chrono::seconds(7);
         }
 
         std::chrono::seconds get_time_worked(void)
         {
-            return std::chrono::seconds(5 * this->get_count_hallacas());
+            return std::chrono::seconds(7 * this->get_count_hallacas());
+        }
+        
+        void decrement_leaves_with_stew(int *&lS, int ids_semaphores)
+        {
+            //Take a hallaca leaf with stew from the stack
+            semop(ids_semaphores, &(this->lock[0]), 1);
+            *(lS + 2) -= 1;
+            semop(ids_semaphores, &(this->unlock[0]), 1);
         }
         
         void increment_count_hallacas(int *&lS, int ids_semaphores)
@@ -100,12 +108,10 @@ class TieUpHallaca
                 this->set_activity("tying up");
                 while(*(lS + 2) > 0)
                 {
-                    //Take a hallaca leaf with stew from the stack
-                    semop(ids_semaphores, &(this->lock[0]), 1);
-                    *(lS + 2) -= 1;
-                    semop(ids_semaphores, &(this->unlock[0]), 1);
-                    std::cout << "I am "<< this->get_activity() << " Hallacas!"<< std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                    this->decrement_leaves_with_stew(lS, ids_semaphores);
+                    std::cout << "I am "<< this->get_activity()
+                              << " Hallacas!" << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(7));
                     
                     this->increment_count_hallacas(lS, ids_semaphores);
                 }
@@ -114,8 +120,12 @@ class TieUpHallaca
                 this->set_activity("");
                 while(*(lS + 2) <= 0)
                 {
-                    std::cout << "I am not busy, waiting for hallacas to tie up. Hurry up!"<< std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(time_for_waiting++));
+                    std::cout << "I am not busy, waiting for hallacas to tie up. Hurry up!"
+                              << std::endl;
+                    std::this_thread::sleep_for
+                        (
+                            std::chrono::seconds(time_for_waiting++)
+                        );
                 }
                 time_for_waiting = 2;
             }
@@ -165,10 +175,4 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
 void initSemaphores(key_t key, int &ids_semaphores)
 {
     ids_semaphores = semget(key, 4, 0600);
-    
-    //Init value for semaphores
-    semctl(ids_semaphores, 0, SETVAL, 0);
-    semctl(ids_semaphores, 1, SETVAL, 0);
-    semctl(ids_semaphores, 2, SETVAL, 0);
-    semctl(ids_semaphores, 3, SETVAL, 0);
 }

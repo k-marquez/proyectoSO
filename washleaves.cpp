@@ -11,6 +11,9 @@
 
 #include "memorykey.h"
 
+// Amount of leaves to generates in the process
+const unsigned int INCREMENT_OF_LEAVES = 5;
+
 void initSharedMemory(key_t ,int *&, int &);
 void initSemaphores(key_t , int &);
 static void signal_handler(int);
@@ -80,7 +83,7 @@ class WashLeaves
         {
             this->count_leaves_washed++;
             semop(ids_semaphores, &(this->lock), 1);
-            *(lS + 0) += 1;
+            *(lS + 0) += 1 + rand() % INCREMENT_OF_LEAVES;
             semop(ids_semaphores, &(this->unlock), 1);
         }
 
@@ -128,6 +131,9 @@ class WashLeaves
 int main(int argc, char *argv[])
 {
     int id_shr_memory, *stacks, status, ids_semaphores;
+
+    //Manage signal SIGUSR1
+    signal(SIGUSR1,signal_handler);
 
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);

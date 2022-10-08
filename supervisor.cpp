@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     {
         "./washleaves.out",
         "./putdough.out",
-        "./putstew.out 0.5 300",
+        "./putstew.out 1 300",
         "./tieuphallaca.out"
     };
     
@@ -126,7 +126,7 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
             lS = (int*)shmat(id_shr_memory, 0, 0);
             if(lS != nullptr)
             {
-                *(lS + 0) = *(lS + 1) = *(lS + 2) = *(lS + 3) = 10;
+                *(lS + 0) = *(lS + 1) = *(lS + 2) = *(lS + 3) = 0;
             }
             else
                 std::cout << "Error linking shared memory to BPC" << std::endl;

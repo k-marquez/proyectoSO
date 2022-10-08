@@ -19,14 +19,20 @@ int main(int argc, char *argv[])
     int id_shr_memory, *stacks, status, ids_semaphores;
     size_t pos = 0;
     short i;
+    struct sembuf operation;
+    
+    operation.sem_num = 0;
+	operation.sem_op = -1;
+	operation.sem_flg = 0;
+	
     pid_t processes_id[4], child;
     std::string processes[] = 
         {
-            "./washleaves.out",
-            "./putdough.out",
+            "./washleaves.out"};
+/*            "./putdough.out",
             "./putstew.out 1 300",
             "./tieuphallaca.out"
-        };
+        };*/
     
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
@@ -47,7 +53,7 @@ int main(int argc, char *argv[])
 
     
     std::cout << "Invoke processes:" << std::endl;
-    /*for (i = 0; i < 4; i++)
+    for (i = 0; i < 1; i++)
     {
         pos = processes[i].find("./");
         std::cout << "\t" << processes[i].substr(pos) << std::endl;
@@ -71,26 +77,37 @@ int main(int argc, char *argv[])
                 processes_id[i] = child;
             }
         }
-    }*/
+    }
     
     int times_to_kill = 7;
     bool running = true;
+    
     while(running)
     {
-        printf("Waiting times to kill processes: %i\n", times_to_kill);
+        std::cout << "Content of shared memory:\n"
+                  << "[0]" << *(stacks + 0) << std::endl;
+        semop(ids_semaphores, &operation, 1);
+        std::cout << "Waiting times to kill processes: " << times_to_kill
+                  << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(times_to_kill--));
         if(times_to_kill <= 0)
         {
-            /*for(i = 0; i < 4; i++)
+            for(i = 0; i < 1; i++)
             {
                 pos = processes[i].find("./");
                 std::cout << "Killing process "
                           << processes[i].substr(pos)
                           << std::endl;
                 kill(processes_id[i],SIGTERM);
-            }*/
+            }
             running = false;
         }
+        
+        std::cout << "Content of shared memory:\n"
+                  << "[0]" << *(stacks + 0) << std::endl
+                  << "[1]" << *(stacks + 1) << std::endl
+                  << "[2]" << *(stacks + 2) << std::endl
+                  << "[3]" << *(stacks + 3) << std::endl;
     }
     
     //Unlinking shared memory to BPC
@@ -115,7 +132,10 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
             lS = (int*)shmat(id_shr_memory, 0, 0);
             if(lS != nullptr)
             {
-                *(lS + 0) = *(lS + 1) = *(lS + 2) = *(lS + 3) = 0;
+                *(lS + 0) = 18;
+                *(lS + 1) = 18;
+                *(lS + 2) = 18;
+                *(lS + 3) = 18;
                 
                 std::cout << "Key: " << key << std::endl;
                 std::cout << "id_shr_memory: " << id_shr_memory << std::endl;
@@ -142,10 +162,10 @@ void initSemaphores(key_t key, int &ids_semaphores)
     ids_semaphores = semget(key, 4, 0600 | IPC_CREAT);
     
     //Init value for semaphores
-    semctl(ids_semaphores, 0, SETVAL, 0);
-    semctl(ids_semaphores, 1, SETVAL, 0);
-    semctl(ids_semaphores, 2, SETVAL, 0);
-    semctl(ids_semaphores, 3, SETVAL, 0);
+    semctl(ids_semaphores, 0, SETVAL, 1);
+    semctl(ids_semaphores, 1, SETVAL, 1);
+    semctl(ids_semaphores, 2, SETVAL, 1);
+    semctl(ids_semaphores, 3, SETVAL, 1);
 }
 
 

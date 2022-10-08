@@ -14,12 +14,18 @@
 
 void initSharedMemory(key_t ,int *&, int &);
 void initSemaphores(key_t , int &);
+void initProcesses(pid_t [], std::string [], float, int);
+void clear_terminal(void);
+void killing_processes(pid_t [], std::string []);
 
 int main(int argc, char *argv[])
 {
-    int id_shr_memory, *stacks, status, ids_semaphores, limit_stew;
-    size_t pos = 0;
-    short i;
+    int id_shr_memory,
+        *stacks,
+        status,
+        ids_semaphores,
+        limit_stew,
+        times_to_kill = 100;
     float stew;
     struct sembuf operation;
 	
@@ -42,52 +48,12 @@ int main(int argc, char *argv[])
 
     //Init shared memory
     initSharedMemory(key, stacks, id_shr_memory);
+    
+    //Init semaphores
     initSemaphores(key, ids_semaphores);
     
     std::cout << "Invoke processes:" << std::endl;
-    for (i = 0; i < 4; i++)
-    {
-        pos = processes[i].find("./");
-        std::cout << "\t" << processes[i].substr(pos) << std::endl;
-        switch (child = fork())
-        {
-            case -1:
-            {
-                return -1;
-            }
-            case 0:
-            {
-                if(i != 2)
-                {                
-                    execlp("/usr/bin/x-terminal-emulator",
-                           "/usr/bin/x-terminal-emulator",
-                           "-e",
-                           processes[i].c_str(),
-                           NULL);
-                }
-                else
-                {
-                    execlp("/usr/bin/x-terminal-emulator",
-                           "/usr/bin/x-terminal-emulator",
-                           "-e",
-                           (
-                                processes[i] +
-                                " " + std::to_string(stew) +
-                                " " + std::to_string(limit_stew) +
-                                " " + std::to_string(processes_id[0])
-                           ).c_str(),
-                           NULL);
-                }
-            }
-            default:
-            {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-                processes_id[i] = child;
-            }
-        }
-    }
-    
-    int times_to_kill = 100;
+    initProcesses(processes_id, processes, stew, limit_stew);
     
     while(true)
     {
@@ -97,17 +63,8 @@ int main(int argc, char *argv[])
         times_to_kill -= 3;
         if(times_to_kill <= 0)
         {
-            for(i = 0; i < 4; i++)
-            {
-                pos = processes[i].find("./");
-                std::cout << "Killing process "
-                          << processes[i].substr(pos)
-                          << std::endl;
-                
-                //Killing process
-                kill(processes_id[i],SIGTERM);
-            }
-            
+            //Killing process
+            killing_processes(processes_id, processes);
             //Unlinking shared memory to BPC
             shmdt(stacks);
             //Deleting shared memory
@@ -119,20 +76,7 @@ int main(int argc, char *argv[])
         }
         
         //Clear terminal
-        switch(child = fork())
-        {
-            case 0:
-            {
-                std::this_thread::sleep_for(std::chrono::seconds(3));
-                execlp("/usr/bin/clear", "clear", NULL);
-                exit(1);
-            }
-            default:
-            {
-                int stat_val;
-                waitpid(child, & stat_val, 0);
-            }
-        }
+        clear_terminal();
         
         std::cout << "Stacks:\n"
                   << "Stack of leaves washed, roasted and cut:\t"
@@ -180,4 +124,86 @@ void initSemaphores(key_t key, int &ids_semaphores)
     semctl(ids_semaphores, 1, SETVAL, 1);
     semctl(ids_semaphores, 2, SETVAL, 1);
     semctl(ids_semaphores, 3, SETVAL, 1);
+}
+
+void clear_terminal(void)
+{
+    pid_t child;
+    switch(child = fork())
+    {
+        case 0:
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            execlp("/usr/bin/clear", "clear", NULL);
+            exit(1);
+        }
+        default:
+        {
+            int stat_val;
+            waitpid(child, & stat_val, 0);
+        }
+    }
+}
+
+void initProcesses(pid_t processes_id[],
+                   std::string processes[],
+                   float stew,
+                   int limit_stew)
+{
+    size_t pos;
+    pid_t child;
+    for (short i = 0; i < 4; i++)
+    {
+        pos = processes[i].find("./");
+        std::cout << "\t" << processes[i].substr(pos) << std::endl;
+        switch (child = fork())
+        {
+            case -1:
+            {
+                exit(-1);
+            }
+            case 0:
+            {
+                if(i != 2)
+                {                
+                    execlp("/usr/bin/x-terminal-emulator",
+                           "/usr/bin/x-terminal-emulator",
+                           "-e",
+                           processes[i].c_str(),
+                           NULL);
+                }
+                else
+                {
+                    execlp("/usr/bin/x-terminal-emulator",
+                           "/usr/bin/x-terminal-emulator",
+                           "-e",
+                           (
+                                processes[i] +
+                                " " + std::to_string(stew) +
+                                " " + std::to_string(limit_stew) +
+                                " " + std::to_string(processes_id[0])
+                           ).c_str(),
+                           NULL);
+                }
+            }
+            default:
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                processes_id[i] = child;
+            }
+        }
+    }
+}
+
+void killing_processes(pid_t processes_id[], std::string processes[])
+{
+    size_t pos;
+    for(short i = 0; i < 4; i++)
+    {
+        pos = processes[i].find("./");
+        std::cout << "Killing process "
+            << processes[i].substr(pos)
+            << std::endl;        
+        kill(processes_id[i],SIGTERM);
+    }
 }

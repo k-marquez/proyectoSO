@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
             }
             running = false;
         }
-        //Temporaly
+        system("clear");
         std::cout << "Stacks:\n"
                   << "Stack of leaves washed, roasted and cut:\t" << *(stacks + 0) << std::endl
                   << "Stack of leaves with dough:\t\t\t" << *(stacks + 1) << std::endl

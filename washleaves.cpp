@@ -16,7 +16,6 @@ const unsigned int INCREMENT_OF_LEAVES = 5;
 
 void initSharedMemory(key_t ,int *&, int &);
 void initSemaphores(key_t , int &);
-static void signal_handler(int);
 
 class WashLeaves
 {
@@ -136,8 +135,14 @@ class WashLeaves
                 this->increment_count_leaves_washed(lS, ids_semaphores);
                 this->set_stop(lS, ids_semaphores);
             } 
+            
             this->set_status(false);
-            std::cout << "I am not washing anymore leaves!" << std::endl;
+            
+            while(true)
+            {            
+                std::cout << "I am not washing anymore leaves!" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+            }
         }
 };
 

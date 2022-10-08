@@ -8,6 +8,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
 
 #include "memorykey.h"
 
@@ -16,9 +17,10 @@ void initSemaphores(key_t , int &);
 
 int main(int argc, char *argv[])
 {
-    int id_shr_memory, *stacks, status, ids_semaphores;
+    int id_shr_memory, *stacks, status, ids_semaphores, limit_stew;
     size_t pos = 0;
     short i;
+    float stew;
     struct sembuf operation;
 	
     pid_t processes_id[4], child;
@@ -26,9 +28,14 @@ int main(int argc, char *argv[])
     {
         "./washleaves.out",
         "./putdough.out",
-        "./putstew.out 0.5 300",
+        "./putstew.out",
         "./tieuphallaca.out"
     };
+    
+    std::cout << "Kilograms of stew available: ";
+    std::cin >> stew;
+    std::cout << "Limit of stew (in gr) to stop washing leaves: ";
+    std::cin >> limit_stew;
     
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
@@ -63,27 +70,31 @@ int main(int argc, char *argv[])
                     execlp("/usr/bin/x-terminal-emulator",
                            "/usr/bin/x-terminal-emulator",
                            "-e",
-                           (processes[i] + " " + 
-                            std::to_string(processes_id[0])).c_str(),
+                           (
+                                processes[i] +
+                                " " + std::to_string(stew) +
+                                " " + std::to_string(limit_stew) +
+                                " " + std::to_string(processes_id[0])
+                           ).c_str(),
                            NULL);
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(2));
             }
             default:
             {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
                 processes_id[i] = child;
             }
         }
     }
     
     int times_to_kill = 100;
-    bool running = true;
     
-    while(running)
+    while(true)
     {
-        std::cout << "Waiting "<< times_to_kill<<" seconds to kill processes"<< std::endl;
+        std::cout << "Waiting "<< times_to_kill
+                  <<" seconds to kill processes" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        times_to_kill--;
+        times_to_kill -= 3;
         if(times_to_kill <= 0)
         {
             for(i = 0; i < 4; i++)
@@ -92,24 +103,45 @@ int main(int argc, char *argv[])
                 std::cout << "Killing process "
                           << processes[i].substr(pos)
                           << std::endl;
+                
+                //Killing process
                 kill(processes_id[i],SIGTERM);
             }
-            running = false;
+            
+            //Unlinking shared memory to BPC
+            shmdt(stacks);
+            //Deleting shared memory
+            shmctl(id_shr_memory, IPC_RMID, 0);
+            //Deleting semaphores
+            semctl(ids_semaphores,4,IPC_RMID,0);
+            
+            return EXIT_SUCCESS; 
         }
-        system("clear");
+        
+        //Clear terminal
+        switch(child = fork())
+        {
+            case 0:
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(3));
+                execlp("/usr/bin/clear", "clear", NULL);
+                exit(1);
+            }
+            default:
+            {
+                int stat_val;
+                waitpid(child, & stat_val, 0);
+            }
+        }
+        
         std::cout << "Stacks:\n"
-                  << "Stack of leaves washed, roasted and cut:\t" << *(stacks + 0) << std::endl
-                  << "Stack of leaves with dough:\t\t\t" << *(stacks + 1) << std::endl
-                  << "Stack of hallacas to be tied:\t\t\t" << *(stacks + 2) << std::endl
-                  << "Stack of tied hallacas:\t\t\t\t" << *(stacks + 3) << std::endl;
+                  << "Stack of leaves washed, roasted and cut:\t"
+                  << *(stacks + 0) << "\nStack of leaves with dough:\t\t\t"
+                  << *(stacks + 1) << "\nStack of hallacas to be tied:\t\t\t"
+                  << *(stacks + 2) << "\nStack of tied hallacas:\t\t\t\t"
+                  << *(stacks + 3) << std::endl;
     }
     
-    //Unlinking shared memory to BPC
-    shmdt(stacks);
-    //Deleting shared memory
-    shmctl(id_shr_memory, IPC_RMID, 0);
-    //Deleting semaphores
-    semctl(ids_semaphores,4,IPC_RMID,0);
     return EXIT_SUCCESS;
 }
 

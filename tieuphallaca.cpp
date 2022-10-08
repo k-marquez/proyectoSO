@@ -1,11 +1,18 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <csignal>
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
 
 #include "memorykey.h"
 
-//Temporary stack of hallacas for tie up and finished hallacas
-unsigned int For_Tie_Up = 2, Hallacas = 0;
+void initSharedMemory(key_t ,int *&, int &);
+void initSemaphores(key_t , int &);
 
 class TieUpHallaca
 {
@@ -13,12 +20,29 @@ class TieUpHallaca
         unsigned int count_hallacas;
         std::string activity;
         bool status;
+        struct sembuf lock[2], unlock[2];
     public:
         TieUpHallaca()
         {
             this->count_hallacas = 0;
             this->activity = "";
             this->status = false;
+            //Lock semaphore three
+            this->lock[0].sem_num = 2;
+            this->lock[0].sem_op = -1;
+            this->lock[0].sem_flg = IPC_NOWAIT;
+            //Unlock semaphore three
+            this->unlock[0].sem_num = 2;
+            this->unlock[0].sem_op = 1;
+            this->unlock[0].sem_flg = 0;
+            //Lock semaphore four
+            this->lock[1].sem_num = 3;
+            this->lock[1].sem_op = -1;
+            this->lock[1].sem_flg = IPC_NOWAIT;
+            //Unlock semaphore four
+            this->unlock[1].sem_num = 3;
+            this->unlock[1].sem_op = 1;
+            this->unlock[1].sem_flg = 0;
         }
         
         unsigned int get_count_hallacas(void)
@@ -49,9 +73,12 @@ class TieUpHallaca
             return std::chrono::seconds(5 * this->get_count_hallacas());
         }
         
-        void increment_count_hallacas(void)
+        void increment_count_hallacas(int *&lS, int ids_semaphores)
         {
             this->count_hallacas++;
+            semop(ids_semaphores, &(this->lock[1]), 1);
+            *(lS + 3) += 1;
+            semop(ids_semaphores, &(this->unlock[1]), 1);
         }
 
         void set_activity(std::string activity)
@@ -64,26 +91,28 @@ class TieUpHallaca
             this->status = status;
         }
         
-        void run()
+        void run(int *&lS, int ids_semaphores)
         {
             short time_for_waiting = 2;
             while(true)
             {
                 this->set_status(true);
                 this->set_activity("tying up");
-                while(For_Tie_Up > 0)
+                while(*(lS + 2) > 0)
                 {
-                    For_Tie_Up--; // Temporary decrement of stack
+                    //Take a hallaca leaf with stew from the stack
+                    semop(ids_semaphores, &(this->lock[0]), 1);
+                    *(lS + 2) -= 1;
+                    semop(ids_semaphores, &(this->unlock[0]), 1);
                     std::cout << "I am "<< this->get_activity() << " Hallacas!"<< std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(5));
                     
-                    Hallacas++; // Temporary increment of count hallacas
-                    this->increment_count_hallacas();
+                    this->increment_count_hallacas(lS, ids_semaphores);
                 }
 
                 this->set_status(false);
                 this->set_activity("");
-                while(For_Tie_Up <= 0)
+                while(*(lS + 2) <= 0)
                 {
                     std::cout << "I am not busy, waiting for hallacas to tie up. Hurry up!"<< std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(time_for_waiting++));
@@ -95,6 +124,51 @@ class TieUpHallaca
 
 int main(int argc, char *argv[])
 {
-    TieUpHallaca marian = TieUpHallaca();
-    marian.run();
+    int id_shr_memory, *stacks, status, ids_semaphores;
+    //Creating a unique key to init shared memory
+    key_t key = ftok(SHRMFILE, SHRMKEY);
+
+    //Init shared memory
+    initSharedMemory(key, stacks, id_shr_memory);
+    initSemaphores(key, ids_semaphores);
+    TieUpHallaca lewis = TieUpHallaca();
+    lewis.run(stacks, ids_semaphores);
+
+    //Unlinking shared memory to BPC
+    shmdt(stacks);
+
+    return EXIT_SUCCESS;
+}
+
+void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
+{
+    //Init shared memory
+    if(key != -1)
+    {
+        id_shr_memory = shmget(key, sizeof(int) * 4, 0777);
+        
+        if(id_shr_memory != -1)
+        {
+            //Linking shared memory to BPC
+            lS = (int*)shmat(id_shr_memory, 0, 0);
+            if(lS == nullptr)
+                std::cout << "Error linking shared memory to BPC" << std::endl;
+        }
+        else
+            std::cout << "Error creating shared memory" << std::endl;
+    }
+    else
+        std::cout << "Error creating shared memory id" << std::endl;
+}
+
+
+void initSemaphores(key_t key, int &ids_semaphores)
+{
+    ids_semaphores = semget(key, 4, 0600);
+    
+    //Init value for semaphores
+    semctl(ids_semaphores, 0, SETVAL, 0);
+    semctl(ids_semaphores, 1, SETVAL, 0);
+    semctl(ids_semaphores, 2, SETVAL, 0);
+    semctl(ids_semaphores, 3, SETVAL, 0);
 }

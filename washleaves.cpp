@@ -11,7 +11,6 @@
 
 #include "memorykey.h"
 
-
 void initSharedMemory(key_t ,int *&, int &);
 void initSemaphores(key_t , int &);
 
@@ -79,13 +78,9 @@ class WashLeaves
         void increment_count_leaves_washed(int *&lS, int ids_semaphores)
         {
             this->count_leaves_washed++;
-            std::cout << "Antes del semaforo"<<std::endl;
             semop(ids_semaphores, &(this->lock), 1);
             *(lS + 0) += 1;
-            std::this_thread::sleep_for(std::chrono::seconds(10));
-            std::cout << "Dentro del semaforo"<<std::endl;
             semop(ids_semaphores, &(this->unlock), 1);
-            std::cout << "Despues del semaforo"<<std::endl;
         }
 
         void set_activity(std::string activity)
@@ -139,15 +134,6 @@ int main(int argc, char *argv[])
     initSharedMemory(key, stacks, id_shr_memory);
     initSemaphores(key, ids_semaphores);
     
-    
-    std::cout << "id_shr_memory: " << id_shr_memory << std::endl;
-    std::cout << "Direction of shared memory: " << stacks << std::endl;
-    std::cout << "Content of shared memory:\n"
-              << "[0]" << *(stacks + 0) << std::endl
-              << "[1]" << *(stacks + 1) << std::endl
-              << "[2]" << *(stacks + 2) << std::endl
-              << "[3]" << *(stacks + 3) << std::endl;
-    
     WashLeaves pepito = WashLeaves();
     pepito.run(stacks, ids_semaphores);
     
@@ -168,18 +154,7 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
         {
             //Linking shared memory to BPC
             lS = (int*)shmat(id_shr_memory, 0, 0);
-            if(lS != nullptr)
-            {               
-                std::cout << "Key: " << key << std::endl;
-                std::cout << "id_shr_memory: " << id_shr_memory << std::endl;
-                std::cout << "Direction of shared memory: " << lS << std::endl;
-                std::cout << "Content of shared memory:\n"
-                          << "[0]" << *(lS + 0) << std::endl
-                          << "[1]" << *(lS + 1) << std::endl
-                          << "[2]" << *(lS + 2) << std::endl
-                          << "[3]" << *(lS + 3) << std::endl;
-            }
-            else
+            if(lS == nullptr)
                 std::cout << "Error linking shared memory to BPC" << std::endl;
         }
         else
@@ -200,5 +175,3 @@ void initSemaphores(key_t key, int &ids_semaphores)
     semctl(ids_semaphores, 2, SETVAL, 0);
     semctl(ids_semaphores, 3, SETVAL, 0);
 }
-
-

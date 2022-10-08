@@ -20,19 +20,15 @@ int main(int argc, char *argv[])
     size_t pos = 0;
     short i;
     struct sembuf operation;
-    
-    operation.sem_num = 0;
-	operation.sem_op = -1;
-	operation.sem_flg = 0;
 	
     pid_t processes_id[4], child;
     std::string processes[] = 
-        {
-            "./washleaves.out"};
-/*            "./putdough.out",
-            "./putstew.out 1 300",
-            "./tieuphallaca.out"
-        };*/
+    {
+        "./washleaves.out",
+        "./putdough.out",
+        "./putstew.out 1 300",
+        "./tieuphallaca.out"
+    };
     
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
@@ -41,19 +37,8 @@ int main(int argc, char *argv[])
     initSharedMemory(key, stacks, id_shr_memory);
     initSemaphores(key, ids_semaphores);
     
-    std::cout << "-----Out function-----"<< std::endl;
-    std::cout << "id_shr_memory: " << id_shr_memory << std::endl;
-    std::cout << "Direction of shared memory: " << stacks << std::endl;
-    std::cout << "Content of shared memory:\n"
-              << "[0]" << *(stacks + 0) << std::endl
-              << "[1]" << *(stacks + 1) << std::endl
-              << "[2]" << *(stacks + 2) << std::endl
-              << "[3]" << *(stacks + 3) << std::endl;
-
-
-    
     std::cout << "Invoke processes:" << std::endl;
-    for (i = 0; i < 1; i++)
+    for (i = 0; i < 4; i++)
     {
         pos = processes[i].find("./");
         std::cout << "\t" << processes[i].substr(pos) << std::endl;
@@ -65,8 +50,8 @@ int main(int argc, char *argv[])
             }
             case 0:
             {
-                execlp("/bin/qterminal",
-                       "/bin/qterminal",
+                execlp("/usr/bin/x-terminal-emulator",
+                       "/usr/bin/x-terminal-emulator",
                        "-e",
                        processes[i].c_str(),
                        NULL);
@@ -79,20 +64,17 @@ int main(int argc, char *argv[])
         }
     }
     
-    int times_to_kill = 7;
+    int times_to_kill = 100;
     bool running = true;
     
     while(running)
     {
-        std::cout << "Content of shared memory:\n"
-                  << "[0]" << *(stacks + 0) << std::endl;
-        semop(ids_semaphores, &operation, 1);
-        std::cout << "Waiting times to kill processes: " << times_to_kill
-                  << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(times_to_kill--));
+        std::cout << "Waiting "<< times_to_kill<<" seconds to kill processes"<< std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        times_to_kill--;
         if(times_to_kill <= 0)
         {
-            for(i = 0; i < 1; i++)
+            for(i = 0; i < 4; i++)
             {
                 pos = processes[i].find("./");
                 std::cout << "Killing process "
@@ -102,12 +84,12 @@ int main(int argc, char *argv[])
             }
             running = false;
         }
-        
-        std::cout << "Content of shared memory:\n"
-                  << "[0]" << *(stacks + 0) << std::endl
-                  << "[1]" << *(stacks + 1) << std::endl
-                  << "[2]" << *(stacks + 2) << std::endl
-                  << "[3]" << *(stacks + 3) << std::endl;
+        //Temporaly
+        std::cout << "Stacks:\n"
+                  << "Stack of leaves washed, roasted and cut:\t" << *(stacks + 0) << std::endl
+                  << "Stack of leaves with dough:\t\t\t" << *(stacks + 1) << std::endl
+                  << "Stack of hallacas to be tied:\t\t\t" << *(stacks + 2) << std::endl
+                  << "Stack of tied hallacas:\t\t\t\t" << *(stacks + 3) << std::endl;
     }
     
     //Unlinking shared memory to BPC
@@ -132,19 +114,7 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
             lS = (int*)shmat(id_shr_memory, 0, 0);
             if(lS != nullptr)
             {
-                *(lS + 0) = 18;
-                *(lS + 1) = 18;
-                *(lS + 2) = 18;
-                *(lS + 3) = 18;
-                
-                std::cout << "Key: " << key << std::endl;
-                std::cout << "id_shr_memory: " << id_shr_memory << std::endl;
-                std::cout << "Direction of shared memory: " << lS << std::endl;
-                std::cout << "Content of shared memory:\n"
-                          << "[0]" << *(lS + 0) << std::endl
-                          << "[1]" << *(lS + 1) << std::endl
-                          << "[2]" << *(lS + 2) << std::endl
-                          << "[3]" << *(lS + 3) << std::endl;
+                *(lS + 0) = *(lS + 1) = *(lS + 2) = *(lS + 3) = 10;
             }
             else
                 std::cout << "Error linking shared memory to BPC" << std::endl;
@@ -167,8 +137,3 @@ void initSemaphores(key_t key, int &ids_semaphores)
     semctl(ids_semaphores, 2, SETVAL, 1);
     semctl(ids_semaphores, 3, SETVAL, 1);
 }
-
-
-
-
-

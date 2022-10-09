@@ -11,7 +11,8 @@
 
 #include "memorykey.h"
 
-void initSharedMemory(key_t ,int *&, int &);
+template<typename T>
+void initSharedMemory(key_t ,T *&, int &, size_t);
 void initSemaphores(key_t , int &);
 
 // At least 80 grams of stew are placed in each hallaca
@@ -186,9 +187,9 @@ class PutStew
             this->activity = activity;
         }
 
-        void set_status(bool status)
+        void set_status(bool *&sP, bool status)
         {
-            this->status = status;
+            *(sP + 2) = this->status = status;
         }
 
         void set_notified(bool notified)
@@ -196,7 +197,7 @@ class PutStew
             this->notified = notified;
         }
 
-        void run(int *&lS, int ids_semaphores)
+        void run(int *&lS, bool *&sP, int ids_semaphores)
         {
             float grs_stew = 0.;
             unsigned int time_for_waiting = 2;
@@ -206,7 +207,7 @@ class PutStew
                 if(this->get_available_stew() <= 0.)
                     break;
                     
-                this->set_status(true);
+                this->set_status(sP, true);
                 while(*(lS + 1) > 0 && this->get_available_stew() > 0.)
                 {
                     this->decrement_leaves_with_dough(lS, ids_semaphores);
@@ -234,12 +235,15 @@ class PutStew
                         this->set_notified(this->stop_washing_leaves(lS, ids_semaphores));
                 }
                 
-                this->set_status(false);
+                this->set_status(sP, false);
+                int r_num = 1 + rand() % 3;
+                std::this_thread::sleep_for(std::chrono::seconds(r_num));
                 this->set_activity("");
                 
                 while(*(lS + 1) <= 0)
                 {
-                     std::cout << "I am not busy, waiting for leaves with dough. Hurry up!"<< std::endl;
+                     std::cout << "I am not busy, waiting for leaves with dough. Hurry up!"
+                               << std::endl;
                      std::this_thread::sleep_for
                         (
                             std::chrono::seconds(time_for_waiting++)
@@ -262,35 +266,46 @@ class PutStew
 
 int main(int argc, char *argv[])
 {
-    int id_shr_memory, *stacks, status, ids_semaphores;
+    int id_shr_memory, id_shr_busy_memory, *stacks, status, ids_semaphores;
+    bool *status_processes;
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
 
-    //Init shared memory
-    initSharedMemory(key, stacks, id_shr_memory);
+    //Init shared memory for stacks
+    initSharedMemory(key, stacks, id_shr_memory, 5);
+    
+    //Init semaphores
     initSemaphores(key, ids_semaphores);
+    
+    key = ftok(SHRMFILE, SHRMBUSYKEY);
+    
+    //Init shared memory for status processes
+    initSharedMemory(key, status_processes, id_shr_busy_memory, 4);
 
     PutStew kevin = PutStew(atof(argv[1]), atof(argv[2]));
     std::cout << "Gr of stew: " << kevin.get_available_stew() << std::endl;
-    kevin.run(stacks, ids_semaphores);
+    kevin.run(stacks, status_processes, ids_semaphores);
 
     //Unlinking shared memory to BPC
     shmdt(stacks);
+    //Unlinking shared memory to BPC
+    shmdt(status_processes);
 
     return EXIT_SUCCESS;
 }
 
-void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
+template<typename T>
+void initSharedMemory(key_t key, T *&lS, int &id_shr_memory, size_t num_slots)
 {
     //Init shared memory
     if(key != -1)
     {
-        id_shr_memory = shmget(key, sizeof(int) * 4, 0777);
+        id_shr_memory = shmget(key, sizeof(T) * num_slots, 0777);
         
         if(id_shr_memory != -1)
         {
             //Linking shared memory to BPC
-            lS = (int*)shmat(id_shr_memory, 0, 0);
+            lS = (T*)shmat(id_shr_memory, 0, 0);
             if(lS == nullptr)
                 std::cout << "Error linking shared memory to BPC" << std::endl;
         }

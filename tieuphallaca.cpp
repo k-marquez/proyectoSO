@@ -11,7 +11,8 @@
 
 #include "memorykey.h"
 
-void initSharedMemory(key_t ,int *&, int &);
+template<typename T>
+void initSharedMemory(key_t ,T *&, int &, size_t);
 void initSemaphores(key_t , int &);
 
 class TieUpHallaca
@@ -84,17 +85,17 @@ class TieUpHallaca
             this->activity = activity;
         }
 
-        void set_status(bool status)
+        void set_status(bool *&sP, bool status)
         {
-            this->status = status;
+            *(sP + 3) = this->status = status;
         }
         
-        void run(int *&lS, int ids_semaphores)
+        void run(int *&lS, bool *& sP, int ids_semaphores)
         {
             short time_for_waiting = 2;
             while(true)
             {
-                this->set_status(true);
+                this->set_status(sP, true);
                 this->set_activity("tying up");
                 while(*(lS + 2) > 0)
                 {
@@ -106,7 +107,9 @@ class TieUpHallaca
                     this->increment_count_hallacas(lS, ids_semaphores);
                 }
 
-                this->set_status(false);
+                this->set_status(sP, false);
+                int r_num = 1 + rand() % 2;
+                std::this_thread::sleep_for(std::chrono::seconds(r_num));
                 this->set_activity("");
                 while(*(lS + 2) <= 0)
                 {
@@ -124,33 +127,45 @@ class TieUpHallaca
 
 int main(int argc, char *argv[])
 {
-    int id_shr_memory, *stacks, status, ids_semaphores;
+    int id_shr_memory, id_shr_busy_memory, *stacks, status, ids_semaphores;
+    bool *status_processes;
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
 
-    //Init shared memory
-    initSharedMemory(key, stacks, id_shr_memory);
+    //Init shared memory for stacks
+    initSharedMemory(key, stacks, id_shr_memory, 5);
+    
+    //Init semaphores
     initSemaphores(key, ids_semaphores);
+    
+    key = ftok(SHRMFILE, SHRMBUSYKEY);
+    
+    //Init shared memory for status processes
+    initSharedMemory(key, status_processes, id_shr_busy_memory, 4);
+    
     TieUpHallaca lewis = TieUpHallaca();
-    lewis.run(stacks, ids_semaphores);
+    lewis.run(stacks, status_processes, ids_semaphores);
 
     //Unlinking shared memory to BPC
     shmdt(stacks);
+    //Unlinking shared memory to BPC
+    shmdt(status_processes);
 
     return EXIT_SUCCESS;
 }
 
-void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
+template<typename T>
+void initSharedMemory(key_t key, T *&lS, int &id_shr_memory, size_t num_slots)
 {
     //Init shared memory
     if(key != -1)
     {
-        id_shr_memory = shmget(key, sizeof(int) * 4, 0777);
+        id_shr_memory = shmget(key, sizeof(T) * num_slots, 0777);
         
         if(id_shr_memory != -1)
         {
             //Linking shared memory to BPC
-            lS = (int*)shmat(id_shr_memory, 0, 0);
+            lS = (T*)shmat(id_shr_memory, 0, 0);
             if(lS == nullptr)
                 std::cout << "Error linking shared memory to BPC" << std::endl;
         }
@@ -160,7 +175,6 @@ void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
     else
         std::cout << "Error creating shared memory id" << std::endl;
 }
-
 
 void initSemaphores(key_t key, int &ids_semaphores)
 {

@@ -13,6 +13,8 @@
 #include "memorykey.h"
 
 void initSharedMemory(key_t ,int *&, int &);
+template<typename T>
+void initSharedMemory(key_t ,T *&, int &, size_t);
 void initSemaphores(key_t , int &);
 void initProcesses(pid_t [], std::string [], float, int);
 void clear_terminal(void);
@@ -21,12 +23,14 @@ void killing_processes(pid_t [], std::string []);
 int main(int argc, char *argv[])
 {
     int id_shr_memory,
+        id_shr_busy_memory,
         *stacks,
         status,
         ids_semaphores,
         limit_stew,
         times_to_kill = 100;
     float stew;
+    bool *status_processes;
     struct sembuf operation;
 	
     pid_t processes_id[4], child;
@@ -47,10 +51,16 @@ int main(int argc, char *argv[])
     key_t key = ftok(SHRMFILE, SHRMKEY);
 
     //Init shared memory
-    initSharedMemory(key, stacks, id_shr_memory);
-    
+    initSharedMemory(key, stacks, id_shr_memory, 5);
+
     //Init semaphores
     initSemaphores(key, ids_semaphores);
+    
+    //Creating a unique key to init shared memory for status processes
+    key = ftok(SHRMFILE, SHRMBUSYKEY);
+    
+    //Init shared memory
+    initSharedMemory(key, status_processes, id_shr_busy_memory, 4);
     
     std::cout << "Invoke processes:" << std::endl;
     initProcesses(processes_id, processes, stew, limit_stew);
@@ -65,10 +75,14 @@ int main(int argc, char *argv[])
         {
             //Killing process
             killing_processes(processes_id, processes);
-            //Unlinking shared memory to BPC
+            //Unlinking shared memory
             shmdt(stacks);
             //Deleting shared memory
             shmctl(id_shr_memory, IPC_RMID, 0);
+            //Unlinking shared memory for busy status
+            shmdt(status_processes);
+            //Deleting shared memory for busy status
+            shmctl(id_shr_busy_memory, IPC_RMID, 0);
             //Deleting semaphores
             semctl(ids_semaphores,4,IPC_RMID,0);
             
@@ -79,30 +93,40 @@ int main(int argc, char *argv[])
         clear_terminal();
         
         std::cout << "Stacks:\n"
-                  << "Stack of leaves washed, roasted and cut:\t"
-                  << *(stacks + 0) << "\nStack of leaves with dough:\t\t\t"
-                  << *(stacks + 1) << "\nStack of hallacas to be tied:\t\t\t"
-                  << *(stacks + 2) << "\nStack of tied hallacas:\t\t\t\t"
-                  << *(stacks + 3) << std::endl;
+                  << "Stack of clean leaves:\t\t\t"
+                  << *(stacks + 0) << "\twashleaves:\t"
+                  << (*(status_processes + 0) ? "Busy" : "Not busy")
+                  << "\nStack of leaves with dough:\t\t"
+                  << *(stacks + 1) << "\tputdough:\t"
+                  << (*(status_processes + 1) ? "Busy\n" : "Not busy")
+                  << "\nStack of hallacas to be tied:\t\t"
+                  << *(stacks + 2) << "\tputstew:\t"
+                  << (*(status_processes + 2) ? "Busy\n" : "Not busy")
+                  << "\nStack of tied hallacas:\t\t\t"
+                  << *(stacks + 3) << "\ttieuphallaca:\t"
+                  << (*(status_processes + 3) ? "Busy\n" : "Not busy")
+                  << std::endl;
     }
     
     return EXIT_SUCCESS;
 }
 
-void initSharedMemory(key_t key, int *&lS, int &id_shr_memory)
+template<typename T>
+void initSharedMemory(key_t key, T *&lS, int &id_shr_memory, size_t num_slots)
 {
     //Init shared memory
     if(key != -1)
     {
-        id_shr_memory = shmget(key, sizeof(int) * 5, 0777|IPC_CREAT);
+        id_shr_memory = shmget(key, sizeof(T) * num_slots, 0777|IPC_CREAT);
         
         if(id_shr_memory != -1)
         {
             //Linking shared memory to BPC
-            lS = (int*)shmat(id_shr_memory, 0, 0);
+            lS = (T*)shmat(id_shr_memory, 0, 0);
             if(lS != nullptr)
             {
-                *(lS + 0) = *(lS + 1) = *(lS + 2) = *(lS + 3) = *(lS + 4) = 0;
+                for(size_t i = 0; i < num_slots; i++)
+                    *(lS + i) = 0;
             }
             else
                 std::cout << "Error linking shared memory to BPC" << std::endl;
@@ -133,7 +157,8 @@ void clear_terminal(void)
     {
         case 0:
         {
-            std::this_thread::sleep_for(std::chrono::seconds(3));
+            int r_num = 1 + rand() % 3;
+            std::this_thread::sleep_for(std::chrono::seconds(r_num));
             execlp("/usr/bin/clear", "clear", NULL);
             exit(1);
         }

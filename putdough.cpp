@@ -124,8 +124,6 @@ class PutDough
                 }
 
                 this->set_status(sP, false);
-                int r_num = 1 + rand() % 2;
-                std::this_thread::sleep_for(std::chrono::seconds(r_num));
                 this->set_activity("");
                 while(*(lS + 0) <= 0)
                 {

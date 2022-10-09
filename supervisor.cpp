@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         status,
         ids_semaphores,
         limit_stew,
-        times_to_kill = 100;
+        times_to_kill = 145;
     float stew;
     bool *status_processes;
     struct sembuf operation;
@@ -69,8 +69,7 @@ int main(int argc, char *argv[])
     {
         std::cout << "Waiting "<< times_to_kill
                   <<" seconds to kill processes" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        times_to_kill -= 3;
+        times_to_kill -= 1;
         if(times_to_kill <= 0)
         {
             //Killing process
@@ -98,13 +97,13 @@ int main(int argc, char *argv[])
                   << (*(status_processes + 0) ? "Busy" : "Not busy")
                   << "\nStack of leaves with dough:\t\t"
                   << *(stacks + 1) << "\tputdough:\t"
-                  << (*(status_processes + 1) ? "Busy\n" : "Not busy")
+                  << (*(status_processes + 1) ? "Busy" : "Not busy")
                   << "\nStack of hallacas to be tied:\t\t"
                   << *(stacks + 2) << "\tputstew:\t"
-                  << (*(status_processes + 2) ? "Busy\n" : "Not busy")
+                  << (*(status_processes + 2) ? "Busy" : "Not busy")
                   << "\nStack of tied hallacas:\t\t\t"
                   << *(stacks + 3) << "\ttieuphallaca:\t"
-                  << (*(status_processes + 3) ? "Busy\n" : "Not busy")
+                  << (*(status_processes + 3) ? "Busy" : "Not busy")
                   << std::endl;
     }
     
@@ -157,8 +156,7 @@ void clear_terminal(void)
     {
         case 0:
         {
-            int r_num = 1 + rand() % 3;
-            std::this_thread::sleep_for(std::chrono::seconds(r_num));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             execlp("/usr/bin/clear", "clear", NULL);
             exit(1);
         }

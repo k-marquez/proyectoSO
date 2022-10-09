@@ -138,8 +138,6 @@ class WashLeaves
             } 
             
             this->set_status(sP, false);
-            int r_num = 1 + rand() % 3;
-            std::this_thread::sleep_for(std::chrono::seconds(r_num));
             semop(ids_semaphores, &(this->unlock[0]), 1);
             while(true)
             {            

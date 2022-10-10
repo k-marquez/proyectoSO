@@ -1,3 +1,9 @@
+/**
+ * @file putdough.cpp
+ * @authors Kevin Márquez V023391555 Lewis Ochoa V026373847
+ * @date 10/10/2022
+ */
+
 #include "memorykey.h"
 
 template<typename T>
@@ -148,12 +154,12 @@ int main(int argc, char *argv[])
     //Init shared memory for status processes
     initSharedMemory(key, status_processes, id_shr_busy_memory, 4);
     
-
     PutDough lucas = PutDough();
     lucas.run(stacks, status_processes, ids_semaphores);
 
     //Unlinking shared memory to BPC
     shmdt(stacks);
+    
     //Unlinking shared memory to BPC
     shmdt(status_processes);
     

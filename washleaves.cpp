@@ -1,3 +1,9 @@
+/**
+ * @file washleaves.cpp
+ * @authors Kevin Márquez V023391555 Lewis Ochoa V026373847
+ * @date 10/10/2022
+ */
+
 #include "memorykey.h"
 
 // Amount of leaves to generates in the process
@@ -160,6 +166,7 @@ int main(int argc, char *argv[])
     
     //Unlinking shared memory to BPC
     shmdt(stacks);
+    
     //Unlinking shared memory to BPC
     shmdt(status_processes);
     

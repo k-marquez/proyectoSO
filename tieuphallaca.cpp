@@ -1,3 +1,9 @@
+/**
+ * @file tieuphallaca.cpp
+ * @authors Kevin Márquez V023391555 Lewis Ochoa V026373847
+ * @date 10/10/2022
+ */
+
 #include "memorykey.h"
 
 #define STACK_SIZE (1024 * 1024)
@@ -192,11 +198,15 @@ void initSemaphores(key_t key, int &ids_semaphores)
 short consultMenu(void)
 {
     short opt;
-    std::cout << "1. Consult quantity of hallacas.\n"
-                  << "2. Consult quantity of hallacas for tie up.\n"
-                  << "3. Static of time.\n"
-                  << ":";
-    std::cin >> opt;
+    do{
+        std::cout << "1. Consult quantity of hallacas.\n"
+                      << "2. Consult quantity of hallacas for tie up.\n"
+                      << "3. Static of time.\n"
+                      << "Option:";
+        std::cin >> opt;
+        if(opt < 1 || opt > 3)
+            std::cout << "\nInvalid option! Try again\n\n";
+    }while(opt < 1 || opt > 3);
     return opt;
 }
 
@@ -230,7 +240,7 @@ int fn(Arg *arg)
                       << ", the count for tie up hallacas is: "
                       << *(arg->lS + 2) << std::endl;
         else
-            std::cout << "I'm " << arg->p->get_status() << ", time to make "
+            std::cout << "I'm " << arg->p->get_status() << ", time to make  "
                       << arg->p->get_count_hallacas() << "is: "
                       << arg->p->get_count_hallacas() * time_to_make_hallacas
                       << std::endl;

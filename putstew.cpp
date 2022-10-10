@@ -1,3 +1,9 @@
+/**
+ * @file putstew.cpp
+ * @authors Kevin Márquez V023391555 Lewis Ochoa V026373847
+ * @date 10/10/2022
+ */
+
 #include "memorykey.h"
 
 template<typename T>
@@ -34,7 +40,6 @@ class PutStew
                 semop(ids_semaphores, &(this->unlock[2]), 1);
                 return true;
             }
-            
             return false;
         }
         
@@ -255,6 +260,7 @@ int main(int argc, char *argv[])
 {
     int id_shr_memory, id_shr_busy_memory, *stacks, status, ids_semaphores;
     bool *status_processes;
+    
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
 
@@ -275,6 +281,7 @@ int main(int argc, char *argv[])
 
     //Unlinking shared memory to BPC
     shmdt(stacks);
+
     //Unlinking shared memory to BPC
     shmdt(status_processes);
 

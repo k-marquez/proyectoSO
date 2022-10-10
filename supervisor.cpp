@@ -1,3 +1,9 @@
+/**
+ * @file supervisor.cpp
+ * @authors Kevin Márquez V023391555 Lewis Ochoa V026373847
+ * @date 10/10/2022
+ */
+
 #include "memorykey.h"
 
 void initSharedMemory(key_t ,int *&, int &);
@@ -16,7 +22,7 @@ int main(int argc, char *argv[])
         status,
         ids_semaphores,
         limit_stew,
-        times_to_kill = 145;
+        times_to_kill = 180;
     float stew;
     bool *status_processes;
     struct sembuf operation;
@@ -30,11 +36,22 @@ int main(int argc, char *argv[])
         "./tieuphallaca.out"
     };
     
-    std::cout << "Kilograms of stew available: ";
-    std::cin >> stew;
-    std::cout << "Limit of stew (in gr) to stop washing leaves: ";
-    std::cin >> limit_stew;
+    do{
+        std::cout << "Kilograms of stew available: ";
+        std::cin >> stew;
+        if(stew < 0)
+            std::cout << "Kilograms of stew cannot be negative! Try again" << std::endl;
+    }while(stew < 0);
     
+    do{
+        std::cout << "Limit of stew (in gr) to stop washing leaves: ";
+        std::cin >> limit_stew;
+        if(limit_stew < 0)
+            std::cout << "Limit of stew (in gr) to stop washing leaves cannot be negative! Try again" << std::endl;
+        if(limit_stew > stew*1000)
+            std::cout << "The stew limit cannot be more than the amount of stew entered! Try again" << std::endl;
+    }while(limit_stew < 0 || limit_stew > stew*1000);
+
     //Creating a unique key to init shared memory
     key_t key = ftok(SHRMFILE, SHRMKEY);
 

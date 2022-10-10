@@ -1,14 +1,3 @@
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <csignal>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-
 #include "memorykey.h"
 
 template<typename T>
@@ -152,7 +141,7 @@ class PutStew
         std::chrono::seconds get_busy_time(void)
         {
             if(this->get_activity() == "putting up")
-                return std::chrono::seconds(3);
+                return std::chrono::seconds(5);
             return std::chrono::seconds(2);
         }
 

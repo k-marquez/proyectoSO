@@ -1,19 +1,22 @@
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <csignal>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-
 #include "memorykey.h"
+
+#define STACK_SIZE (1024 * 1024)
+
+class TieUpHallaca;
+struct Arg;
 
 template<typename T>
 void initSharedMemory(key_t ,T *&, int &, size_t);
 void initSemaphores(key_t , int &);
+short consultMenu(void);
+int fn_w(void *);
+int fn(Arg *);
+
+struct Arg 
+{
+    TieUpHallaca * p;
+    int * lS;
+};
 
 class TieUpHallaca
 {
@@ -51,9 +54,9 @@ class TieUpHallaca
         std::string get_status(void)
         {
             if(this->status)
-                return "Busy: "+this->get_activity();
+                return "busy: "+ this->get_activity();
             else
-                return "Not Busy";
+                return "not busy";
         }
 
         std::chrono::seconds get_busy_time(void)
@@ -92,6 +95,16 @@ class TieUpHallaca
         
         void run(int *&lS, bool *& sP, int ids_semaphores)
         {
+            //Stack for chil process
+            char * stack_child = (char *)malloc(STACK_SIZE);
+            
+            Arg *arg = new Arg;
+            arg->p = this;
+            arg->lS = lS;
+            
+            //Init process to manages querys
+            clone(&fn_w, stack_child + STACK_SIZE, CLONE_VM, arg);
+            
             short time_for_waiting = 2;
             while(true)
             {
@@ -99,11 +112,9 @@ class TieUpHallaca
                 this->set_activity("tying up");
                 while(*(lS + 2) > 0)
                 {
-                    this->decrement_leaves_with_stew(lS, ids_semaphores);
-                    std::cout << "I am "<< this->get_activity()
-                              << " Hallacas!" << std::endl;
+                    this->decrement_leaves_with_stew(lS, ids_semaphores);                
                     std::this_thread::sleep_for(std::chrono::seconds(7));
-                    
+                            
                     this->increment_count_hallacas(lS, ids_semaphores);
                 }
 
@@ -111,8 +122,7 @@ class TieUpHallaca
                 this->set_activity("");
                 while(*(lS + 2) <= 0)
                 {
-                    std::cout << "I am not busy, waiting for hallacas to tie up. Hurry up!"
-                              << std::endl;
+                    this->set_activity("I'm not busy, waiting for hallacas to tie up!");
                     std::this_thread::sleep_for
                         (
                             std::chrono::seconds(time_for_waiting++)
@@ -177,4 +187,55 @@ void initSharedMemory(key_t key, T *&lS, int &id_shr_memory, size_t num_slots)
 void initSemaphores(key_t key, int &ids_semaphores)
 {
     ids_semaphores = semget(key, 4, 0600);
+}
+
+short consultMenu(void)
+{
+    short opt;
+    std::cout << "1. Consult quantity of hallacas.\n"
+                  << "2. Consult quantity of hallacas for tie up.\n"
+                  << "3. Static of time.\n"
+                  << ":";
+    std::cin >> opt;
+    return opt;
+}
+
+//Function to manage querys
+int fn_w(void *arg)
+{
+    return fn((Arg *)arg);
+}
+
+int fn(Arg *arg)
+{
+    short opt,
+          time_to_make_hallacas,
+          washleaves_t = 6,
+          putdoug_t = 3,
+          putstew_t = 5,
+          tieup_t = 7;
+    
+    time_to_make_hallacas = washleaves_t + putdoug_t + putstew_t + tieup_t;
+    
+    while(true)
+    {
+        opt = consultMenu();
+        if(opt == 1)
+            std::cout << "I'm " << arg->p->get_status()
+                      << ", the count of hallacas is: "
+                      << arg->p->get_count_hallacas()
+                      << std::endl;
+        else if(opt == 2)
+            std::cout << "I'm " << arg->p->get_status()
+                      << ", the count for tie up hallacas is: "
+                      << *(arg->lS + 2) << std::endl;
+        else
+            std::cout << "I'm " << arg->p->get_status() << ", time to make "
+                      << arg->p->get_count_hallacas() << "is: "
+                      << arg->p->get_count_hallacas() * time_to_make_hallacas
+                      << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        clear_terminal();
+    }
+    exit(1);
 }

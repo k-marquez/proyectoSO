@@ -1,14 +1,3 @@
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <csignal>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-
 #include "memorykey.h"
 
 // Amount of leaves to generates in the process
@@ -75,7 +64,7 @@ class WashLeaves
         std::chrono::seconds get_busy_time(void)
         {
             if(this->get_activity() == "washing")
-                return std::chrono::seconds(8);
+                return std::chrono::seconds(6);
             else if(this->get_activity() == "roasting")
                 return std::chrono::seconds(4);
             else
@@ -84,7 +73,7 @@ class WashLeaves
 
         std::chrono::seconds get_time_worked(void)
         {
-            return std::chrono::seconds(8 * this->get_count_leaves_washed());
+            return std::chrono::seconds(6 * this->get_count_leaves_washed());
         }
 
         void increment_count_leaves_washed(int *&lS, int ids_semaphores)
@@ -126,7 +115,7 @@ class WashLeaves
                 this->set_activity("roasting");
                 std::cout << "I am " << this->get_activity() << " leaves!"
                           << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(4));
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 
                 this->set_activity("cutting up");
                 std::cout << "I am " << this->get_activity() << " leaves!"

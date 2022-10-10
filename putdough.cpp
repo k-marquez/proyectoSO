@@ -1,14 +1,3 @@
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <csignal>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-
 #include "memorykey.h"
 
 template<typename T>
@@ -68,14 +57,14 @@ class PutDough
         std::chrono::seconds get_busy_time(void)
         {
             if(this->get_activity() == "greasing")
-                return std::chrono::seconds(6);
+                return std::chrono::seconds(3);
             else
-                return std::chrono::seconds(4);
+                return std::chrono::seconds(2);
         }
 
         std::chrono::seconds get_time_worked(void)
         {
-            return std::chrono::seconds(6 *
+            return std::chrono::seconds(3 *
                                         this->get_count_leaves_with_dough());
         }
         
@@ -113,12 +102,12 @@ class PutDough
                     this->set_activity("greasing");
                     std::cout << "I am " << this->get_activity()
                               << " leaves!"<< std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                     
                     this->set_activity("putting up dough");
                     std::cout << "I am " << this->get_activity()
                               << " to leaves!"<< std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(4));
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
                     
                     this->increment_count_leaves_with_dough(lS, ids_semaphores);
                 }

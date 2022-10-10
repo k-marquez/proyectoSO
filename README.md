@@ -1,9 +1,9 @@
 # Proyecto de SO
 
-Desarrollado por:
+### Desarrollado por:
 
-Márquez Kevin, V-23.391.555, marquezberriosk@gmail.com
-Ochoa Lewis, V-26.373.847, lewis8a@gmail.com
+#### Márquez Kevin, V-23.391.555, marquezberriosk@gmail.com
+#### Ochoa Lewis, V-26.373.847, lewis8a@gmail.com
 
 Estructura del Proyecto
 

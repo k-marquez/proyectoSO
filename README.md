@@ -9,7 +9,7 @@
 
 Los archivos que componen al proyecto se describen a continuación:
 
-**makefile:** Archivo para compilación y ejecución del proyecto. Bastará con hacer make para que se compile y ejecute el proyecto. Nota: Por defecto el make usará el compilador clang, si desea usar cualquier otro compilador modifique la variable “comp” dentro del makefile.
+**makefile:** Archivo para compilación y ejecución del proyecto. Bastará con hacer make para que se compile y ejecute el proyecto. **Nota:** Por defecto el make usará el compilador **clang**, si desea usar cualquier otro compilador modifique la variable **“comp”** dentro del makefile.
  
 **memorykey.h:** Encabezado de configuración de constantes globales para sincronización de la memoria virtual y algunas funciones auxiliares.
 
@@ -21,11 +21,11 @@ Los archivos que componen al proyecto se describen a continuación:
 
 **tieuphallaca.cpp:** Fuente que modela al proceso de amarre de hallacas, este será instanciado por el proceso supervisor y abrirá una nueva terminal donde desplegará un menú con información para hacer las respectivas consultas, por debajo está ejecutando el proceso de amarre de hallacas (tying up) y una hebra será la encargada de manejar las consultas. El ciclo de ejecución del proceso de amarre es de 7 segundos. Si no hay hallacas por amarrar, el proceso entrará en espera hasta que exista al menos una hoja con masa en la pila respectiva, sin embargo, la hebra estará activa y podrá responder las consultas que se le soliciten mediante el menú mostrado al usuario por pantalla.
 
-**supervisor.cpp:** Archivo que modela al proceso supervisor, este es quien inicia la ejecución del proyecto, al hacer make e iniciarse se le solicitará por terminal que introduzca la cantidad de guiso disponible (en Kg) y el límite de guiso (en gr) utilizado en el proceso putstew para indicarle al proceso washleaves que deje de lavar hojas, luego de eso hará lo necesario para iniciar los módulos explicados anteriormente. Después de ello,  limpiará la terminal cada segundo y desplegará la información de libre/ocupado de cada uno de los procesos, así como el estado actual de cada uno de las pilas (stacks). Este proceso está configurado para durar 3 minutos y luego de eso liberará los recursos solicitados al principio de la ejecución y cerrará las diferentes terminales abiertas al inicio, dando por concluido correctamente el programa.
+**supervisor.cpp:** Archivo que modela al proceso supervisor, este es quien inicia la ejecución del proyecto, al hacer **make** e iniciarse se le solicitará por terminal que introduzca la cantidad de guiso disponible (**en Kg**) y el límite de guiso (**en gr**) utilizado en el proceso **putstew** para indicarle al proceso **washleaves** que deje de lavar hojas, luego de eso hará lo necesario para iniciar los módulos explicados anteriormente. Después de ello,  limpiará la terminal cada segundo y desplegará la información de libre/ocupado de cada uno de los procesos, así como el estado actual de cada uno de las pilas (stacks). Este proceso está configurado para durar 3 minutos y luego de eso liberará los recursos solicitados al principio de la ejecución y cerrará las diferentes terminales abiertas al inicio, dando por concluido correctamente el programa.
 
 ### Ejecución del código: 
 
-Solo debe hacer “make” en la terminal en la carpeta contenedora de los fuentes.
+Solo debe hacer “**make**” en la terminal en la carpeta contenedora de los fuentes.
 
 **Nota:** Todos los ficheros mencionados con anterioridad deben estar ubicados en el mismo directorio para su correcto funcionamiento.
  
